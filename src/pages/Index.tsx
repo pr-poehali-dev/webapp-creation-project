@@ -34,7 +34,7 @@ const Index = () => {
               Революция в управлении сложными продажами
             </Badge>
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Не CRM,<br />а система <span className="gradient-primary bg-clip-text text-transparent">принятия решений</span>
+              Не CRM,<br />а система <span className="text-primary">принятия решений</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Адаптивная матрица приоритизации для менеджеров, работающих со сложными технологическими продуктами и проектными продажами
