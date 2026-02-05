@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,44 +6,49 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
+    --background: 222.2 47.4% 11.2%;
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 8%;
+    --card: 217.2 32.6% 17.5%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 10% 8%;
+    --popover: 217.2 32.6% 17.5%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 263 70% 63%;
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 328 86% 60%;
+    --secondary: 189 94% 53%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 10% 15%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 199 89% 48%;
+    --accent: 162 63% 51%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 10% 15%;
-    --input: 240 10% 15%;
-    --ring: 263 70% 63%;
+    --border: 217.2 32.6% 25%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217.2 91.2% 59.8%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 240 10% 6%;
+    --sidebar-background: 222.2 47.4% 11.2%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 263 70% 63%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 10% 12%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 10% 15%;
-    --sidebar-ring: 263 70% 63%;
+    --sidebar-border: 217.2 32.6% 25%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --quadrant-focus: 142 71% 29%;
+    --quadrant-grow: 217 91% 35%;
+    --quadrant-monitor: 33 88% 28%;
+    --quadrant-archive: 215 16% 30%;
   }
 
   .dark {
@@ -92,16 +97,44 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Rubik", sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
   }
 }
 
 @layer utilities {
   .gradient-primary {
-    background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #22d3ee 0%, #34d399 100%);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      rgba(15, 23, 42, 0) 100%
+    );
+  }
+
+  .quadrant-focus {
+    background-color: hsl(var(--quadrant-focus));
+  }
+
+  .quadrant-grow {
+    background-color: hsl(var(--quadrant-grow));
+  }
+
+  .quadrant-monitor {
+    background-color: hsl(var(--quadrant-monitor));
+  }
+
+  .quadrant-archive {
+    background-color: hsl(var(--quadrant-archive));
   }
 }
