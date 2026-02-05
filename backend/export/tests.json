@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Export without auth",
+      "method": "POST",
+      "headers": {},
+      "body": {
+        "action": "csv"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "Требуется авторизация"
+      }
+    }
+  ]
+}

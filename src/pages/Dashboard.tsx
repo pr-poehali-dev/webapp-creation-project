@@ -103,6 +103,14 @@ const Dashboard = () => {
               <Icon name="Users" size={16} className="mr-2" />
               Команда
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/export')}
+            >
+              <Icon name="Download" size={16} className="mr-2" />
+              Экспорт
+            </Button>
           </nav>
         </div>
       </header>

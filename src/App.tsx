@@ -16,6 +16,7 @@ import MatrixView from "./pages/MatrixView";
 import Clients from "./pages/Clients";
 import ClientNew from "./pages/ClientNew";
 import ClientEdit from "./pages/ClientEdit";
+import Export from "./pages/Export";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/clients" element={<Clients />} />
           <Route path="/client/new" element={<ClientNew />} />
           <Route path="/client/:id" element={<ClientEdit />} />
+          <Route path="/export" element={<Export />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
