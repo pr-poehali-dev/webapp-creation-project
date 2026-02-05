@@ -1,5 +1,6 @@
 import json
 import os
+import jwt
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -34,7 +35,7 @@ def handler(event: dict, context) -> dict:
         organization_id = None
         
         if token:
-            user_id, organization_id = get_user_from_token(conn, token)
+            user_id, organization_id = get_user_from_token(token)
         
         if action == 'list':
             result = list_templates(conn, organization_id)
@@ -100,24 +101,24 @@ def handler(event: dict, context) -> dict:
         }
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f'ERROR: {str(e)}')
+        print(f'TRACEBACK: {error_details}')
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)}),
+            'body': json.dumps({'error': str(e), 'details': error_details}),
             'isBase64Encoded': False
         }
 
 
-def get_user_from_token(conn, token: str):
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute('''
-            SELECT u.id, u.organization_id
-            FROM users u
-            WHERE u.auth_token = %s
-        ''', (token,))
-        user = cur.fetchone()
-        if user:
-            return user['id'], user['organization_id']
+def get_user_from_token(token: str):
+    try:
+        secret = os.environ.get('JWT_SECRET')
+        payload = jwt.decode(token, secret, algorithms=['HS256'])
+        return payload['user_id'], payload['organization_id']
+    except:
         return None, None
 
 

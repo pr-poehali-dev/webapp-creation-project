@@ -13,9 +13,17 @@ interface User {
   organization_name: string;
 }
 
+interface Stats {
+  total_clients: number;
+  total_matrices: number;
+  focus_clients: number;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [stats, setStats] = useState<Stats>({ total_clients: 0, total_matrices: 0, focus_clients: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,7 +35,50 @@ const Dashboard = () => {
     }
 
     setUser(JSON.parse(userData));
+    fetchStats();
   }, [navigate]);
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const [clientsRes, matricesRes] = await Promise.all([
+        fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ action: 'list' }),
+        }),
+        fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ action: 'list' }),
+        })
+      ]);
+
+      const clientsData = await clientsRes.json();
+      const matricesData = await matricesRes.json();
+
+      const totalClients = clientsData.clients?.length || 0;
+      const focusClients = clientsData.clients?.filter((c: any) => c.quadrant === 'focus').length || 0;
+      const totalMatrices = matricesData.matrices?.length || 0;
+
+      setStats({
+        total_clients: totalClients,
+        total_matrices: totalMatrices,
+        focus_clients: focusClients
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки статистики:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -141,8 +192,10 @@ const Dashboard = () => {
                 <Icon name="Building2" size={24} className="text-primary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Клиенты</h3>
-              <p className="text-3xl font-bold mb-1">0</p>
-              <p className="text-sm text-muted-foreground">Добавьте первого клиента</p>
+              <p className="text-3xl font-bold mb-1">{loading ? '...' : stats.total_clients}</p>
+              <p className="text-sm text-muted-foreground">
+                {stats.total_clients === 0 ? 'Добавьте первого клиента' : 'Всего клиентов'}
+              </p>
             </Card>
 
             <Card 
@@ -153,8 +206,10 @@ const Dashboard = () => {
                 <Icon name="Grid3x3" size={24} className="text-secondary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Матрицы</h3>
-              <p className="text-3xl font-bold mb-1">0</p>
-              <p className="text-sm text-muted-foreground">Создайте первую матрицу</p>
+              <p className="text-3xl font-bold mb-1">{loading ? '...' : stats.total_matrices}</p>
+              <p className="text-sm text-muted-foreground">
+                {stats.total_matrices === 0 ? 'Создайте первую матрицу' : 'Всего матриц'}
+              </p>
             </Card>
 
             <Card className="p-6 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent">
@@ -162,8 +217,10 @@ const Dashboard = () => {
                 <Icon name="Target" size={24} className="text-accent" />
               </div>
               <h3 className="text-lg font-semibold mb-2">В фокусе</h3>
-              <p className="text-3xl font-bold mb-1">0</p>
-              <p className="text-sm text-muted-foreground">Клиентов требует внимания</p>
+              <p className="text-3xl font-bold mb-1">{loading ? '...' : stats.focus_clients}</p>
+              <p className="text-sm text-muted-foreground">
+                {stats.focus_clients === 0 ? 'Нет клиентов в фокусе' : 'Клиентов требует внимания'}
+              </p>
             </Card>
           </div>
 
