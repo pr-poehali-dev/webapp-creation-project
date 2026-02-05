@@ -137,6 +137,7 @@ const ClientNew = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'create',
           ...formData,

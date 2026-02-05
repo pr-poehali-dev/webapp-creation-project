@@ -16,7 +16,8 @@ def handler(event: dict, context) -> dict:
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-Authorization'
             },
-            'body': ''
+            'body': '',
+            'isBase64Encoded': False
         }
     
     token = event.get('headers', {}).get('X-Authorization', '').replace('Bearer ', '')
@@ -24,7 +25,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Токен не предоставлен'})
+            'body': json.dumps({'error': 'Токен не предоставлен'}),
+            'isBase64Encoded': False
         }
     
     try:
@@ -36,13 +38,15 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Токен истёк'})
+            'body': json.dumps({'error': 'Токен истёк'}),
+            'isBase64Encoded': False
         }
     except jwt.InvalidTokenError:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Неверный токен'})
+            'body': json.dumps({'error': 'Неверный токен'}),
+            'isBase64Encoded': False
         }
     
     dsn = os.environ.get('DATABASE_URL')
@@ -96,7 +100,8 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'clients': clients})
+                'body': json.dumps({'clients': clients}),
+                'isBase64Encoded': False
             }
         
         elif action == 'get':
@@ -122,7 +127,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Клиент не найден'})
+                    'body': json.dumps({'error': 'Клиент не найден'}),
+                    'isBase64Encoded': False
                 }
             
             cur.execute("""
@@ -168,7 +174,8 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'client': client})
+                'body': json.dumps({'client': client}),
+                'isBase64Encoded': False
             }
         
         elif action == 'create':
@@ -179,7 +186,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'company_name обязателен'})
+                    'body': json.dumps({'error': 'company_name обязателен'}),
+                    'isBase64Encoded': False
                 }
             
             cur.execute("""
@@ -227,7 +235,8 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 201,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'client_id': client_id, 'message': 'Клиент создан'})
+                'body': json.dumps({'client_id': client_id, 'message': 'Клиент создан'}),
+                'isBase64Encoded': False
             }
         
         elif action == 'update':
@@ -236,7 +245,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'client_id обязателен'})
+                    'body': json.dumps({'error': 'client_id обязателен'}),
+                    'isBase64Encoded': False
                 }
             
             cur.execute("""
@@ -248,7 +258,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Клиент не найден'})
+                    'body': json.dumps({'error': 'Клиент не найден'}),
+                    'isBase64Encoded': False
                 }
             
             updates = []
@@ -301,7 +312,8 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'message': 'Клиент обновлен'})
+                'body': json.dumps({'message': 'Клиент обновлен'}),
+                'isBase64Encoded': False
             }
         
         elif action == 'score_client':
@@ -312,7 +324,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'client_id обязателен'})
+                    'body': json.dumps({'error': 'client_id обязателен'}),
+                    'isBase64Encoded': False
                 }
             
             cur.execute("""
@@ -324,7 +337,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Клиент не найден'})
+                    'body': json.dumps({'error': 'Клиент не найден'}),
+                    'isBase64Encoded': False
                 }
             
             for score_item in scores:
@@ -358,7 +372,8 @@ def handler(event: dict, context) -> dict:
                     'score_x': score_x,
                     'score_y': score_y,
                     'quadrant': quadrant
-                })
+                }),
+                'isBase64Encoded': False
             }
         
         elif action == 'delete':
@@ -367,7 +382,8 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'client_id обязателен'})
+                    'body': json.dumps({'error': 'client_id обязателен'}),
+                    'isBase64Encoded': False
                 }
             
             cur.execute("""
@@ -380,14 +396,16 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'message': 'Клиент деактивирован'})
+                'body': json.dumps({'message': 'Клиент деактивирован'}),
+                'isBase64Encoded': False
             }
         
         else:
             return {
                 'statusCode': 400,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Неизвестное действие'})
+                'body': json.dumps({'error': 'Неизвестное действие'}),
+                'isBase64Encoded': False
             }
     
     except Exception as e:
@@ -395,7 +413,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
         }
     finally:
         cur.close()

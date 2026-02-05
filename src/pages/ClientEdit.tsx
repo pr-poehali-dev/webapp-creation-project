@@ -197,6 +197,7 @@ const ClientEdit = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'update',
           client_id: parseInt(id!),
