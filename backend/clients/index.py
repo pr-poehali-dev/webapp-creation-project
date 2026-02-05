@@ -304,6 +304,63 @@ def handler(event: dict, context) -> dict:
                 'body': json.dumps({'message': 'Клиент обновлен'})
             }
         
+        elif action == 'score_client':
+            client_id = body.get('client_id')
+            scores = body.get('scores', [])
+            
+            if not client_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'client_id обязателен'})
+                }
+            
+            cur.execute("""
+                SELECT id FROM clients 
+                WHERE id = %s AND organization_id = %s AND is_active = true
+            """ % (client_id, organization_id))
+            
+            if not cur.fetchone():
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Клиент не найден'})
+                }
+            
+            for score_item in scores:
+                criterion_id = score_item.get('criterion_id')
+                score = score_item.get('score', 0)
+                comment = score_item.get('comment', '')
+                
+                cur.execute("""
+                    INSERT INTO client_scores (client_id, criterion_id, score, comment)
+                    VALUES (%s, %s, %s, '%s')
+                    ON CONFLICT (client_id, criterion_id) 
+                    DO UPDATE SET score = %s, comment = '%s', updated_at = CURRENT_TIMESTAMP
+                """ % (client_id, criterion_id, score, comment.replace("'", "''"), score, comment.replace("'", "''")))
+            
+            score_x, score_y = calculate_scores(cur, client_id)
+            quadrant = determine_quadrant(score_x, score_y)
+            
+            cur.execute("""
+                UPDATE clients 
+                SET score_x = %s, score_y = %s, quadrant = '%s', updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """ % (score_x, score_y, quadrant, client_id))
+            
+            conn.commit()
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({
+                    'message': 'Оценки сохранены',
+                    'score_x': score_x,
+                    'score_y': score_y,
+                    'quadrant': quadrant
+                })
+            }
+        
         elif action == 'delete':
             client_id = body.get('client_id')
             if not client_id:
@@ -346,18 +403,20 @@ def handler(event: dict, context) -> dict:
 
 
 def calculate_scores(cur, client_id: int) -> tuple:
-    """Рассчитывает итоговые оценки по осям X и Y на основе критериев"""
+    """Рассчитывает итоговые оценки по осям X и Y на основе критериев с взвешенной суммой"""
     cur.execute("""
         SELECT mc.axis, cs.score, mc.weight, mc.max_value
         FROM client_scores cs
         JOIN matrix_criteria mc ON cs.criterion_id = mc.id
-        WHERE cs.client_id = %s
+        WHERE cs.client_id = %s AND mc.axis IN ('x', 'y')
     """ % client_id)
     
     rows = cur.fetchall()
     
-    x_scores = []
-    y_scores = []
+    x_weighted_sum = 0
+    x_max_possible = 0
+    y_weighted_sum = 0
+    y_max_possible = 0
     
     for row in rows:
         axis = row[0]
@@ -365,22 +424,25 @@ def calculate_scores(cur, client_id: int) -> tuple:
         weight = float(row[2])
         max_value = float(row[3])
         
-        normalized_score = (score / max_value) * weight
+        weighted_score = score * weight
+        max_weighted = max_value * weight
         
         if axis == 'x':
-            x_scores.append(normalized_score)
+            x_weighted_sum += weighted_score
+            x_max_possible += max_weighted
         elif axis == 'y':
-            y_scores.append(normalized_score)
+            y_weighted_sum += weighted_score
+            y_max_possible += max_weighted
     
-    score_x = sum(x_scores) / len(x_scores) * 10 if x_scores else 0
-    score_y = sum(y_scores) / len(y_scores) * 10 if y_scores else 0
+    score_x = (x_weighted_sum / x_max_possible * 10) if x_max_possible > 0 else 0
+    score_y = (y_weighted_sum / y_max_possible * 10) if y_max_possible > 0 else 0
     
     return round(score_x, 2), round(score_y, 2)
 
 
 def determine_quadrant(score_x: float, score_y: float) -> str:
-    """Определяет квадрант на основе оценок по осям"""
-    threshold = 5.0
+    """Определяет квадрант на основе оценок по осям (порог 70% = 7.0 из 10)"""
+    threshold = 7.0
     
     if score_x >= threshold and score_y >= threshold:
         return 'focus'

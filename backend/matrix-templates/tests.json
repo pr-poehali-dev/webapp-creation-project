@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "List templates",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "list"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "templates": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
