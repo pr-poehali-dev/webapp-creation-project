@@ -169,7 +169,7 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
         matrix_id = cur.fetchone()['id']
         
         cur.execute('''
-            SELECT axis, name, weight, min_value, max_value, description, sort_order
+            SELECT axis, name, weight, min_value, max_value, hint, sort_order
             FROM template_criteria
             WHERE template_id = %s
         ''', (template_id,))
@@ -183,7 +183,7 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
                 matrix_id,
                 criterion['axis'],
                 criterion['name'],
-                criterion.get('description', ''),
+                criterion.get('hint', ''),
                 criterion['weight'],
                 criterion['min_value'],
                 criterion['max_value'],
