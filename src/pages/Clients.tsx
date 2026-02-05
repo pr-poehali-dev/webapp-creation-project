@@ -25,6 +25,7 @@ const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterQuadrant, setFilterQuadrant] = useState<string>('');
+  const [hasMatrices, setHasMatrices] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -34,7 +35,29 @@ const Clients = () => {
     }
 
     fetchClients();
+    checkMatrices();
   }, [navigate, filterQuadrant]);
+
+  const checkMatrices = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'list' }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setHasMatrices(data.matrices && data.matrices.length > 0);
+      }
+    } catch (error) {
+      console.error('Ошибка проверки матриц:', error);
+    }
+  };
 
   const fetchClients = async () => {
     setLoading(true);
@@ -99,12 +122,19 @@ const Clients = () => {
                 <p className="text-sm text-muted-foreground">Управление базой клиентов</p>
               </div>
             </div>
-            <Link to="/client/new">
-              <Button className="gradient-primary">
+            {hasMatrices ? (
+              <Link to="/client/new">
+                <Button className="gradient-primary">
+                  <Icon name="Plus" size={20} className="mr-2" />
+                  Добавить клиента
+                </Button>
+              </Link>
+            ) : (
+              <Button className="gradient-primary" disabled title="Сначала создайте матрицу">
                 <Icon name="Plus" size={20} className="mr-2" />
                 Добавить клиента
               </Button>
-            </Link>
+            )}
           </div>
         </div>
       </header>
@@ -194,9 +224,15 @@ const Clients = () => {
               <Icon name="Building2" size={40} className="text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Пока нет клиентов</h3>
-            <p className="text-muted-foreground mb-6">
-              Добавьте первого клиента и начните работу с матрицей приоритизации
-            </p>
+            {!hasMatrices ? (
+              <p className="text-muted-foreground mb-6">
+                Сначала <Link to="/matrices/new" className="text-primary hover:underline">создайте матрицу</Link>, чтобы начать добавлять клиентов
+              </p>
+            ) : (
+              <p className="text-muted-foreground mb-6">
+                Добавьте первого клиента и начните работу с матрицей приоритизации
+              </p>
+            )}
             <Link to="/client/new">
               <Button className="gradient-primary">
                 <Icon name="Plus" size={20} className="mr-2" />

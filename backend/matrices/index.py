@@ -42,10 +42,11 @@ def handler(event: dict, context) -> dict:
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, X-Authorization',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Authorization',
                 'Access-Control-Max-Age': '86400'
             },
-            'body': ''
+            'body': '',
+            'isBase64Encoded': False
         }
     
     auth_header = event.get('headers', {}).get('X-Authorization', '')
@@ -55,7 +56,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Authorization required'})
+            'body': json.dumps({'error': 'Authorization required'}),
+            'isBase64Encoded': False
         }
     
     payload = verify_jwt_token(token)
@@ -63,7 +65,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Invalid token'})
+            'body': json.dumps({'error': 'Invalid token'}),
+            'isBase64Encoded': False
         }
     
     try:
@@ -90,20 +93,23 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Invalid action. Use: create, update, or delete'})
+                    'body': json.dumps({'error': 'Invalid action. Use: create, update, or delete'}),
+                    'isBase64Encoded': False
                 }
         else:
             return {
                 'statusCode': 405,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Method not allowed'})
+                'body': json.dumps({'error': 'Method not allowed'}),
+                'isBase64Encoded': False
             }
     
     except Exception as e:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
         }
 
 
@@ -143,7 +149,8 @@ def handle_list(payload: dict) -> dict:
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'matrices': matrices})
+            'body': json.dumps({'matrices': matrices}),
+            'isBase64Encoded': False
         }
     
     finally:
@@ -173,7 +180,8 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
             return {
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Matrix not found'})
+                'body': json.dumps({'error': 'Matrix not found'}),
+                'isBase64Encoded': False
             }
         
         matrix = {
@@ -212,7 +220,8 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'matrix': matrix})
+            'body': json.dumps({'matrix': matrix}),
+            'isBase64Encoded': False
         }
     
     finally:
@@ -226,7 +235,8 @@ def handle_create(payload: dict, body: dict) -> dict:
         return {
             'statusCode': 403,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Permission denied'})
+            'body': json.dumps({'error': 'Permission denied'}),
+            'isBase64Encoded': False
         }
     
     name = body.get('name', '').strip()
@@ -237,14 +247,16 @@ def handle_create(payload: dict, body: dict) -> dict:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Matrix name is required'})
+            'body': json.dumps({'error': 'Matrix name is required'}),
+            'isBase64Encoded': False
         }
     
     if not criteria or len(criteria) == 0:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'At least one criterion is required'})
+            'body': json.dumps({'error': 'At least one criterion is required'}),
+            'isBase64Encoded': False
         }
     
     organization_id = payload['organization_id']
@@ -287,7 +299,8 @@ def handle_create(payload: dict, body: dict) -> dict:
                 'success': True,
                 'matrix_id': matrix_id,
                 'message': 'Matrix created successfully'
-            })
+            }),
+            'isBase64Encoded': False
         }
     
     finally:
@@ -301,7 +314,8 @@ def handle_update(payload: dict, body: dict) -> dict:
         return {
             'statusCode': 403,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Permission denied'})
+            'body': json.dumps({'error': 'Permission denied'}),
+            'isBase64Encoded': False
         }
     
     matrix_id = body.get('matrix_id')
@@ -313,7 +327,8 @@ def handle_update(payload: dict, body: dict) -> dict:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'matrix_id is required'})
+            'body': json.dumps({'error': 'matrix_id is required'}),
+            'isBase64Encoded': False
         }
     
     organization_id = payload['organization_id']
@@ -338,7 +353,8 @@ def handle_update(payload: dict, body: dict) -> dict:
             return {
                 'statusCode': 403,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Cannot modify matrix from different organization'})
+                'body': json.dumps({'error': 'Cannot modify matrix from different organization'}),
+                'isBase64Encoded': False
             }
         
         if name:
@@ -391,7 +407,8 @@ def handle_update(payload: dict, body: dict) -> dict:
             'body': json.dumps({
                 'success': True,
                 'message': 'Matrix updated successfully'
-            })
+            }),
+            'isBase64Encoded': False
         }
     
     finally:
@@ -405,7 +422,8 @@ def handle_delete(payload: dict, body: dict) -> dict:
         return {
             'statusCode': 403,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Only owner and admin can delete matrices'})
+            'body': json.dumps({'error': 'Only owner and admin can delete matrices'}),
+            'isBase64Encoded': False
         }
     
     matrix_id = body.get('matrix_id')
@@ -414,7 +432,8 @@ def handle_delete(payload: dict, body: dict) -> dict:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'matrix_id is required'})
+            'body': json.dumps({'error': 'matrix_id is required'}),
+            'isBase64Encoded': False
         }
     
     organization_id = payload['organization_id']
@@ -432,14 +451,16 @@ def handle_delete(payload: dict, body: dict) -> dict:
             return {
                 'statusCode': 404,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Matrix not found'})
+                'body': json.dumps({'error': 'Matrix not found'}),
+                'isBase64Encoded': False
             }
         
         if result[0] != organization_id:
             return {
                 'statusCode': 403,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Cannot delete matrix from different organization'})
+                'body': json.dumps({'error': 'Cannot delete matrix from different organization'}),
+                'isBase64Encoded': False
             }
         
         cur.execute("UPDATE matrices SET is_active = false WHERE id = %s" % matrix_id)
@@ -451,7 +472,8 @@ def handle_delete(payload: dict, body: dict) -> dict:
             'body': json.dumps({
                 'success': True,
                 'message': 'Matrix deactivated successfully'
-            })
+            }),
+            'isBase64Encoded': False
         }
     
     finally:
