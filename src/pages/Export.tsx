@@ -91,6 +91,51 @@ const Export = () => {
     }
   };
 
+  const downloadExcel = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/41fa57f2-3d91-49a2-9d09-5c174f6c3c99', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'excel',
+          quadrant: selectedQuadrant || undefined,
+          matrix_id: selectedMatrix ? parseInt(selectedMatrix) : undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка экспорта');
+      }
+
+      const excelContent = atob(data.content);
+      const bytes = new Uint8Array(excelContent.length);
+      for (let i = 0; i < excelContent.length; i++) {
+        bytes[i] = excelContent.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = data.filename;
+      link.click();
+
+      setSuccess(`Экспортировано ${data.total} клиентов`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка экспорта');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const exportBitrix = async () => {
     setError('');
     setSuccess('');
@@ -233,7 +278,7 @@ const Export = () => {
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                Матрица (опционально, только для CSV)
+                Матрица (опционально, только для CSV/Excel)
               </label>
               <select
                 value={selectedMatrix}
@@ -271,14 +316,14 @@ const Export = () => {
           )}
         </Card>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
           <Card className="p-6 hover:shadow-xl transition-all">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Icon name="FileSpreadsheet" size={32} className="text-primary" />
             </div>
             <h3 className="text-lg font-semibold mb-2 text-center">CSV</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Универсальный формат для Excel, Google Sheets и других таблиц
+              Универсальный текстовый формат для любых систем
             </p>
             <Button
               className="w-full gradient-primary"
@@ -299,6 +344,35 @@ const Export = () => {
             </Button>
           </Card>
 
+          <Card className="p-6 hover:shadow-xl transition-all border-2 border-primary/30">
+            <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+              <Icon name="FileSpreadsheet" size={32} className="text-accent" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-center">Excel</h3>
+            <p className="text-sm text-muted-foreground mb-4 text-center">
+              XLSX файл с цветовым форматированием квадрантов
+            </p>
+            <Button
+              className="w-full gradient-primary"
+              onClick={downloadExcel}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                  Экспорт...
+                </>
+              ) : (
+                <>
+                  <Icon name="Download" size={16} className="mr-2" />
+                  Скачать Excel
+                </>
+              )}
+            </Button>
+          </Card>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 hover:shadow-xl transition-all">
             <div className="w-16 h-16 rounded-xl bg-secondary/10 flex items-center justify-center mx-auto mb-4">
               <Icon name="Blocks" size={32} className="text-secondary" />
@@ -328,8 +402,8 @@ const Export = () => {
           </Card>
 
           <Card className="p-6 hover:shadow-xl transition-all">
-            <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
-              <Icon name="Workflow" size={32} className="text-accent" />
+            <div className="w-16 h-16 rounded-xl bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+              <Icon name="Workflow" size={32} className="text-orange-500" />
             </div>
             <h3 className="text-lg font-semibold mb-2 text-center">amoCRM</h3>
             <p className="text-sm text-muted-foreground mb-4 text-center">
@@ -360,9 +434,10 @@ const Export = () => {
           <div className="flex items-start gap-3">
             <Icon name="Info" size={20} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-semibold mb-2">Инструкция по импорту</h4>
+              <h4 className="font-semibold mb-2">Инструкция по использованию</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• <strong>CSV:</strong> Откройте в Excel/Sheets → «Файл» → «Импорт»</li>
+                <li>• <strong>Excel:</strong> Откройте напрямую в Microsoft Excel или LibreOffice Calc</li>
                 <li>• <strong>Bitrix24:</strong> Раздел CRM → Импорт → Загрузить JSON файл</li>
                 <li>• <strong>amoCRM:</strong> Настройки → API → Импорт сущностей</li>
               </ul>
