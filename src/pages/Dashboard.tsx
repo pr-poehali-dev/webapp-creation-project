@@ -82,6 +82,14 @@ const Dashboard = () => {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => navigate('/matrices')}
+            >
+              <Icon name="Grid3x3" size={16} className="mr-2" />
+              Матрицы
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => navigate('/team')}
             >
               <Icon name="Users" size={16} className="mr-2" />

@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Test list matrices without auth",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "Authorization required"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

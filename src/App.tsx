@@ -9,6 +9,9 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Team from "./pages/Team";
+import Matrices from "./pages/Matrices";
+import MatrixNew from "./pages/MatrixNew";
+import MatrixEdit from "./pages/MatrixEdit";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +28,9 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/matrices" element={<Matrices />} />
+          <Route path="/matrix/new" element={<MatrixNew />} />
+          <Route path="/matrix/:id" element={<MatrixEdit />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
