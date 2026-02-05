@@ -1,0 +1,42 @@
+{
+  "tests": [
+    {
+      "name": "Create client without matrix",
+      "method": "POST",
+      "path": "/",
+      "headers": {
+        "X-Authorization": "Bearer test_token_12345"
+      },
+      "body": {
+        "action": "create",
+        "company_name": "Test Company LLC",
+        "contact_person": "Ivan Petrov",
+        "email": "ivan@testcompany.ru",
+        "phone": "+7 (999) 123-45-67",
+        "description": "Large enterprise client"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "client_id": "number",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "List all clients",
+      "method": "POST",
+      "path": "/",
+      "headers": {
+        "X-Authorization": "Bearer test_token_12345"
+      },
+      "body": {
+        "action": "list"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "clients": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

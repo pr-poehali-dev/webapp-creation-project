@@ -82,6 +82,14 @@ const Dashboard = () => {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => navigate('/clients')}
+            >
+              <Icon name="Building2" size={16} className="mr-2" />
+              Клиенты
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => navigate('/matrices')}
             >
               <Icon name="Grid3x3" size={16} className="mr-2" />
@@ -109,16 +117,22 @@ const Dashboard = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card className="p-6 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+            <Card 
+              className="p-6 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent cursor-pointer hover:scale-105 transition-all"
+              onClick={() => navigate('/clients')}
+            >
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Icon name="Users" size={24} className="text-primary" />
+                <Icon name="Building2" size={24} className="text-primary" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Клиенты</h3>
               <p className="text-3xl font-bold mb-1">0</p>
               <p className="text-sm text-muted-foreground">Добавьте первого клиента</p>
             </Card>
 
-            <Card className="p-6 border-secondary/30 bg-gradient-to-br from-secondary/5 to-transparent">
+            <Card 
+              className="p-6 border-secondary/30 bg-gradient-to-br from-secondary/5 to-transparent cursor-pointer hover:scale-105 transition-all"
+              onClick={() => navigate('/matrices')}
+            >
               <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
                 <Icon name="Grid3x3" size={24} className="text-secondary" />
               </div>
@@ -145,14 +159,14 @@ const Dashboard = () => {
               <div className="flex-1">
                 <h3 className="text-xl font-bold mb-2">Следующие шаги</h3>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
+                  <li className="flex items-start gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('/matrices')}>
                     <Icon name="CheckCircle" size={20} className="text-accent flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium">Создайте матрицу приоритизации</p>
                       <p className="text-sm text-muted-foreground">Настройте критерии оценки клиентов</p>
                     </div>
                   </li>
-                  <li className="flex items-start gap-3">
+                  <li className="flex items-start gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('/clients')}>
                     <Icon name="CheckCircle" size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-muted-foreground">Добавьте первых клиентов</p>
