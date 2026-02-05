@@ -40,7 +40,7 @@ const Clients = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('CLIENTS_FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

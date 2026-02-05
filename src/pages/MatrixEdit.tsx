@@ -49,7 +49,7 @@ const MatrixEdit = () => {
   const fetchMatrix = async (token: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`https://functions.poehali.dev/FUNCTION_URL?id=${id}`, {
+      const response = await fetch(`https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc?id=${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -117,7 +117,7 @@ const MatrixEdit = () => {
     setSaving(true);
 
     try {
-      const response = await fetch('https://functions.poehali.dev/FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ const MatrixEdit = () => {
     if (!token) return;
 
     try {
-      const response = await fetch('https://functions.poehali.dev/FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

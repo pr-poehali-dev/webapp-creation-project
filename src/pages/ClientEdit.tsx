@@ -80,7 +80,7 @@ const ClientEdit = () => {
   const fetchClient = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('CLIENTS_FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ const ClientEdit = () => {
   const fetchMatrices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('MATRICES_FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +139,7 @@ const ClientEdit = () => {
   const fetchMatrixCriteria = async (matrixId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('MATRICES_FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +191,7 @@ const ClientEdit = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('CLIENTS_FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ const ClientEdit = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('CLIENTS_FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,6 @@
 {
+  "clients": "https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037",
+  "matrices": "https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc",
   "invites": "https://functions.poehali.dev/81e1a6f6-951b-4c0b-b28e-5883c65d5bcf",
   "users": "https://functions.poehali.dev/369fdc8c-fb5b-4b02-bb8f-ef5d8da3de3e",
   "auth": "https://functions.poehali.dev/10d14e92-b1df-45e1-b617-80a5071cb4d8"

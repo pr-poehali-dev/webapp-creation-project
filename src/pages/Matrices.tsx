@@ -33,7 +33,7 @@ const Matrices = () => {
   const fetchMatrices = async (token: string) => {
     setLoading(true);
     try {
-      const response = await fetch('https://functions.poehali.dev/FUNCTION_URL', {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
