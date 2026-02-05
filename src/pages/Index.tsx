@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +22,12 @@ const Index = () => {
             <a href="#author" className="text-sm hover:text-primary transition-colors">Автор</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm">Войти</Button>
-            <Button className="gradient-primary" size="sm">Попробовать бесплатно</Button>
+            <Link to="/login">
+              <Button variant="ghost" size="sm">Войти</Button>
+            </Link>
+            <Link to="/signup">
+              <Button className="gradient-primary" size="sm">Попробовать бесплатно</Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -40,10 +45,12 @@ const Index = () => {
               Адаптивная матрица приоритизации для менеджеров, работающих со сложными технологическими продуктами и проектными продажами
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Button size="lg" className="gradient-primary text-lg px-8 h-14">
-                <Icon name="Rocket" size={20} className="mr-2" />
-                Начать бесплатно
-              </Button>
+              <Link to="/signup">
+                <Button size="lg" className="gradient-primary text-lg px-8 h-14">
+                  <Icon name="Rocket" size={20} className="mr-2" />
+                  Начать бесплатно
+                </Button>
+              </Link>
               <Button size="lg" variant="outline" className="text-lg px-8 h-14">
                 <Icon name="Play" size={20} className="mr-2" />
                 Посмотреть демо
@@ -356,10 +363,12 @@ const Index = () => {
               Попробуйте TechSale CRM бесплатно 14 дней. Без привязки карты.
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Button size="lg" className="gradient-primary text-lg px-8 h-14">
-                <Icon name="Rocket" size={20} className="mr-2" />
-                Начать бесплатно
-              </Button>
+              <Link to="/signup">
+                <Button size="lg" className="gradient-primary text-lg px-8 h-14">
+                  <Icon name="Rocket" size={20} className="mr-2" />
+                  Начать бесплатно
+                </Button>
+              </Link>
               <Button size="lg" variant="outline" className="text-lg px-8 h-14">
                 <Icon name="MessageCircle" size={20} className="mr-2" />
                 Связаться с нами
