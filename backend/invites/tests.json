@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "Test accept invitation without token",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "accept",
+        "full_name": "Test User",
+        "password": "password123"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test list invitations without auth",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "Authorization required"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

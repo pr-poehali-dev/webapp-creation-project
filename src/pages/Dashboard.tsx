@@ -46,26 +46,48 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-              <Icon name="Zap" size={24} className="text-white" />
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                <Icon name="Zap" size={24} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">TechSale CRM</h1>
+                <p className="text-xs text-muted-foreground">{user.organization_name}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold">TechSale CRM</h1>
-              <p className="text-xs text-muted-foreground">{user.organization_name}</p>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-medium">{user.full_name}</p>
+                <p className="text-xs text-muted-foreground">{user.role}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <Icon name="LogOut" size={16} className="mr-2" />
+                Выйти
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium">{user.full_name}</p>
-              <p className="text-xs text-muted-foreground">{user.role}</p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <Icon name="LogOut" size={16} className="mr-2" />
-              Выйти
+          
+          <nav className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary"
+              onClick={() => navigate('/dashboard')}
+            >
+              <Icon name="LayoutDashboard" size={16} className="mr-2" />
+              Дашборд
             </Button>
-          </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/team')}
+            >
+              <Icon name="Users" size={16} className="mr-2" />
+              Команда
+            </Button>
+          </nav>
         </div>
       </header>
 
@@ -129,7 +151,7 @@ const Dashboard = () => {
                       <p className="text-sm text-muted-foreground">Начните заполнять базу контактов</p>
                     </div>
                   </li>
-                  <li className="flex items-start gap-3">
+                  <li className="flex items-start gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('/team')}>
                     <Icon name="CheckCircle" size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-muted-foreground">Пригласите команду</p>

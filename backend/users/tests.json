@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Test list users without auth",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "Authorization required"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
