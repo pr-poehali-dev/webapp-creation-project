@@ -111,6 +111,14 @@ const Dashboard = () => {
               <Icon name="Download" size={16} className="mr-2" />
               Экспорт
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/import')}
+            >
+              <Icon name="Upload" size={16} className="mr-2" />
+              Импорт
+            </Button>
           </nav>
         </div>
       </header>
