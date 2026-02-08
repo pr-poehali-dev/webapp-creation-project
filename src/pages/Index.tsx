@@ -119,9 +119,8 @@ const Index = () => {
             <div className="text-center mb-16">
               <Badge className="mb-4 bg-destructive/10 text-destructive border-destructive/20">Проблема рынка</Badge>
               <h2 className="text-4xl md:text-5xl font-bold mb-6">Классические CRM не работают<br />для сложных продаж</h2>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Сегодня на рынке представлено множество CRM систем, адаптированных под «классическую» воронку продаж. Но при работе со сложными технологическими продуктами эта система не работает.
-              </p>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Сегодня на рынке представлено множество CRM систем, адаптированных под «классическую» воронку продаж. 
+Но практика показала, что при работе со сложными технологическими продуктами эта система не работает.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
@@ -129,30 +128,28 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center mb-4">
                   <Icon name="AlertTriangle" size={24} className="text-destructive" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3">Воронка — свалка клиентов</h3>
-                <p className="text-sm text-muted-foreground">
-                  В воронке невозможно оценить реальную ценность клиента с точки зрения проектной продажи. Все смешано в одну кучу.
-                </p>
+                <h3 className="text-lg font-semibold mb-3">Воронка — "свалка" 
+клиентов</h3>
+                <p className="text-sm text-muted-foreground">В воронке невозможно оценить реальную ценность клиента с точки зрения проектной продажи. 
+"Общие" данные вроде бюджета сделки не позволяют выстраивать стратегию взаимодействия. </p>
               </Card>
 
               <Card className="p-6 border-destructive/20 bg-destructive/5">
                 <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center mb-4">
                   <Icon name="Smartphone" size={24} className="text-destructive" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3">Не для «полевых» менеджеров</h3>
-                <p className="text-sm text-muted-foreground">
-                  Интерфейс CRM адаптирован под ПК. У менеджера «в полях» нет возможности работать с системой на регулярной основе.
-                </p>
+                <h3 className="text-lg font-semibold mb-3">Не для менеджеров
+в "полях"</h3>
+                <p className="text-sm text-muted-foreground">У менеджера «в полях» нет возможности работать с системой на регулярной основе. 
+В результате CRM системы ведутся "для галки"</p>
               </Card>
 
               <Card className="p-6 border-destructive/20 bg-destructive/5">
                 <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center mb-4">
                   <Icon name="X" size={24} className="text-destructive" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3">Нет объективных приоритетов</h3>
-                <p className="text-sm text-muted-foreground">
-                  Информация не позволяет объективно расставить приоритеты по каждому клиенту в проектной продаже.
-                </p>
+                <h3 className="text-lg font-semibold mb-3">Недостаток объективных критериев</h3>
+                <p className="text-sm text-muted-foreground">Информация не позволяет объективно расставить приоритеты по каждому клиенту в проектной продаже сложного технологического продукта. </p>
               </Card>
             </div>
           </div>
@@ -173,9 +170,7 @@ const Index = () => {
             <Card className="p-8 mb-12 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20">
               <div className="text-center mb-8">
                 <p className="text-2xl font-semibold text-primary mb-2">Главный вопрос менеджера:</p>
-                <p className="text-xl text-foreground italic">
-                  «С каким из 50 клиентов мне работать в ближайшие 2 часа, чтобы максимизировать вероятность закрытия сделки на 6–12 месяцев?»
-                </p>
+                <p className="text-xl text-foreground italic">«С каким из 300 клиентов на рынке мне развивать работу, чтобы максимизировать вероятность закрытия сделки в ближайшие 6–12 месяцев?»</p>
               </div>
             </Card>
 
