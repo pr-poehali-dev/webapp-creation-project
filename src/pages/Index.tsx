@@ -80,9 +80,8 @@ const Index = () => {
             <div className="text-center mb-16">
               <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">О продукте</Badge>
               <h2 className="text-4xl md:text-5xl font-bold mb-6">Облачная CRM для сложных продаж</h2>
-              <p className="text-xl text-muted-foreground">
-                TechSale CRM — это облачный web-app, адаптированный под desktop и мобильные устройства с возможностью заполнения информации без интернета
-              </p>
+              <p className="text-xl text-muted-foreground">TechSale CRM — это облачный web-app, заточенный фокусно под задачу технологических и проектных продаж. 
+Система адаптирована под desktop и мобильные устройства с возможностью заполнения информации без интернета</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
