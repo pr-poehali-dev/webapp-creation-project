@@ -51,6 +51,23 @@ const Dashboard = () => {
 
   const fetchPermissions = async (token: string) => {
     try {
+      const userData = localStorage.getItem('user');
+      const parsedUser = userData ? JSON.parse(userData) : null;
+      
+      if (parsedUser && (parsedUser.role === 'owner' || parsedUser.role === 'admin')) {
+        const adminPermissions = {
+          client_visibility: 'all',
+          client_edit: 'full',
+          matrix_access: 'create',
+          team_access: 'invite',
+          import_export: 'both',
+          settings_access: true
+        };
+        setPermissions(adminPermissions);
+        localStorage.setItem('permissions', JSON.stringify(adminPermissions));
+        return;
+      }
+      
       const response = await fetch('https://functions.poehali.dev/b444253a-2d33-4d1d-8e79-57fde40bbc5d', {
         method: 'POST',
         headers: {
