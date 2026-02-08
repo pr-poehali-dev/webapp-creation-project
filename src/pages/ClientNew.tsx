@@ -9,6 +9,13 @@ interface Matrix {
   name: string;
 }
 
+interface DealStatus {
+  id: number;
+  name: string;
+  weight: number;
+  sort_order: number;
+}
+
 interface Criterion {
   id: number;
   name: string;
@@ -29,6 +36,7 @@ const ClientNew = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
+  const [dealStatuses, setDealStatuses] = useState<DealStatus[]>([]);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [error, setError] = useState('');
 
@@ -40,6 +48,7 @@ const ClientNew = () => {
     description: '',
     notes: '',
     matrix_id: '',
+    deal_status_id: '',
   });
 
   const [scores, setScores] = useState<Score[]>([]);
@@ -52,6 +61,7 @@ const ClientNew = () => {
     }
 
     fetchMatrices();
+    fetchDealStatuses();
   }, [navigate]);
 
   const fetchMatrices = async () => {
@@ -72,6 +82,24 @@ const ClientNew = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки матриц:', error);
+    }
+  };
+
+  const fetchDealStatuses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/7a876a8c-dc4a-439e-aef5-23bde46d9fc2', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setDealStatuses(data.statuses);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки статусов сделок:', error);
     }
   };
 
@@ -141,6 +169,7 @@ const ClientNew = () => {
           action: 'create',
           ...formData,
           matrix_id: formData.matrix_id ? parseInt(formData.matrix_id) : null,
+          deal_status_id: formData.deal_status_id ? parseInt(formData.deal_status_id) : null,
           scores: formData.matrix_id ? scores : [],
         }),
       });
@@ -281,28 +310,52 @@ const ClientNew = () => {
           </Card>
 
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Матрица приоритизации</h2>
+            <h2 className="text-xl font-semibold mb-4">Матрица приоритизации и статус сделки</h2>
             
-            <div className="mb-6">
-              <label htmlFor="matrix_id" className="block text-sm font-medium mb-2">
-                Выберите матрицу для оценки
-              </label>
-              <select
-                id="matrix_id"
-                value={formData.matrix_id}
-                onChange={(e) => handleMatrixChange(e.target.value)}
-                className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Без матрицы</option>
-                {matrices.map((matrix) => (
-                  <option key={matrix.id} value={matrix.id}>
-                    {matrix.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-muted-foreground mt-2">
-                Выберите матрицу для автоматического определения квадранта
-              </p>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label htmlFor="matrix_id" className="block text-sm font-medium mb-2">
+                  Матрица оценки
+                </label>
+                <select
+                  id="matrix_id"
+                  value={formData.matrix_id}
+                  onChange={(e) => handleMatrixChange(e.target.value)}
+                  className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Без матрицы</option>
+                  {matrices.map((matrix) => (
+                    <option key={matrix.id} value={matrix.id}>
+                      {matrix.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Выберите матрицу для автоматического определения квадранта
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="deal_status_id" className="block text-sm font-medium mb-2">
+                  Статус сделки
+                </label>
+                <select
+                  id="deal_status_id"
+                  value={formData.deal_status_id}
+                  onChange={(e) => setFormData({ ...formData, deal_status_id: e.target.value })}
+                  className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Не выбран</option>
+                  {dealStatuses.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Текущее состояние переговоров с клиентом
+                </p>
+              </div>
             </div>
 
             {criteria.length > 0 && (

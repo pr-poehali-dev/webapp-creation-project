@@ -43,30 +43,11 @@ const ClientMatrixScoring = ({
   const yCriteria = criteria.filter(c => c.axis === 'y');
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Оценка по критериям</h2>
-      
-      <div className="mb-6">
-        <label htmlFor="matrix_id" className="block text-sm font-medium mb-2">
-          Матрица для оценки
-        </label>
-        <select
-          id="matrix_id"
-          value={matrixId}
-          onChange={(e) => onMatrixChange(e.target.value)}
-          className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option value="">Без матрицы</option>
-          {matrices.map((matrix) => (
-            <option key={matrix.id} value={matrix.id}>
-              {matrix.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
+    <>
       {criteria.length > 0 && (
-        <div className="space-y-6">
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-6">Оценка по критериям</h2>
+          <div className="space-y-6">
           {xCriteria.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -144,9 +125,10 @@ const ClientMatrixScoring = ({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </Card>
       )}
-    </Card>
+    </>
   );
 };
 

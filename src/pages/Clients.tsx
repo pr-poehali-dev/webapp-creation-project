@@ -18,13 +18,25 @@ interface Client {
   matrix_id: number;
   matrix_name: string;
   created_at: string;
+  deal_status_id: number | null;
+  deal_status_name: string | null;
+  deal_status_weight: number | null;
+}
+
+interface DealStatus {
+  id: number;
+  name: string;
+  weight: number;
+  sort_order: number;
 }
 
 const Clients = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
+  const [dealStatuses, setDealStatuses] = useState<DealStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterQuadrant, setFilterQuadrant] = useState<string>('');
+  const [filterDealStatus, setFilterDealStatus] = useState<string>('');
   const [hasMatrices, setHasMatrices] = useState(true);
 
   useEffect(() => {
@@ -36,7 +48,8 @@ const Clients = () => {
 
     fetchClients();
     checkMatrices();
-  }, [navigate, filterQuadrant]);
+    fetchDealStatuses();
+  }, [navigate, filterQuadrant, filterDealStatus]);
 
   const checkMatrices = async () => {
     try {
@@ -59,6 +72,24 @@ const Clients = () => {
     }
   };
 
+  const fetchDealStatuses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/7a876a8c-dc4a-439e-aef5-23bde46d9fc2', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setDealStatuses(data.statuses);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки статусов сделок:', error);
+    }
+  };
+
   const fetchClients = async () => {
     setLoading(true);
     try {
@@ -72,6 +103,7 @@ const Clients = () => {
         body: JSON.stringify({
           action: 'list',
           quadrant: filterQuadrant || undefined,
+          deal_status_id: filterDealStatus ? parseInt(filterDealStatus) : undefined,
         }),
       });
 
@@ -140,6 +172,35 @@ const Clients = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Icon name="Filter" size={20} className="text-muted-foreground" />
+            <span className="text-sm font-medium">Фильтр по статусу сделки:</span>
+          </div>
+          <select
+            value={filterDealStatus}
+            onChange={(e) => setFilterDealStatus(e.target.value)}
+            className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Все статусы</option>
+            {dealStatuses.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.name}
+              </option>
+            ))}
+          </select>
+          {filterDealStatus && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterDealStatus('')}
+            >
+              <Icon name="X" size={16} className="mr-2" />
+              Сбросить
+            </Button>
+          )}
+        </div>
+
         <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card
             className={`p-4 cursor-pointer transition-all hover:scale-105 ${filterQuadrant === 'focus' ? 'ring-2 ring-primary' : ''}`}

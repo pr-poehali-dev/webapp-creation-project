@@ -41,7 +41,16 @@ interface Client {
   quadrant: string;
   matrix_id: number;
   matrix_name: string;
+  deal_status_id: number | null;
+  deal_status_name: string | null;
   scores: Score[];
+}
+
+interface DealStatus {
+  id: number;
+  name: string;
+  weight: number;
+  sort_order: number;
 }
 
 const ClientEdit = () => {
@@ -50,6 +59,7 @@ const ClientEdit = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
+  const [dealStatuses, setDealStatuses] = useState<DealStatus[]>([]);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [error, setError] = useState('');
   const [client, setClient] = useState<Client | null>(null);
@@ -62,6 +72,7 @@ const ClientEdit = () => {
     description: '',
     notes: '',
     matrix_id: '',
+    deal_status_id: '',
   });
 
   const [scores, setScores] = useState<Score[]>([]);
@@ -75,6 +86,7 @@ const ClientEdit = () => {
 
     fetchClient();
     fetchMatrices();
+    fetchDealStatuses();
   }, [navigate, id]);
 
   const fetchClient = async () => {
@@ -100,6 +112,7 @@ const ClientEdit = () => {
           description: data.client.description || '',
           notes: data.client.notes || '',
           matrix_id: data.client.matrix_id?.toString() || '',
+          deal_status_id: data.client.deal_status_id?.toString() || '',
         });
         setScores(data.client.scores || []);
 
@@ -133,6 +146,24 @@ const ClientEdit = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки матриц:', error);
+    }
+  };
+
+  const fetchDealStatuses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/7a876a8c-dc4a-439e-aef5-23bde46d9fc2', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setDealStatuses(data.statuses);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки статусов сделок:', error);
     }
   };
 
@@ -202,6 +233,7 @@ const ClientEdit = () => {
           client_id: parseInt(id!),
           ...formData,
           matrix_id: formData.matrix_id ? parseInt(formData.matrix_id) : null,
+          deal_status_id: formData.deal_status_id ? parseInt(formData.deal_status_id) : null,
           scores: formData.matrix_id ? scores : [],
         }),
       });
@@ -275,6 +307,52 @@ const ClientEdit = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <ClientBasicInfoForm formData={formData} setFormData={setFormData} />
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <label htmlFor="deal_status_id" className="block text-sm font-medium mb-3">
+                Статус сделки
+              </label>
+              <select
+                id="deal_status_id"
+                value={formData.deal_status_id}
+                onChange={(e) => setFormData({ ...formData, deal_status_id: e.target.value })}
+                className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Не выбран</option>
+                {dealStatuses.map((status) => (
+                  <option key={status.id} value={status.id}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-2">
+                Текущее состояние переговоров с клиентом
+              </p>
+            </div>
+
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <label htmlFor="matrix_id" className="block text-sm font-medium mb-3">
+                Матрица оценки
+              </label>
+              <select
+                id="matrix_id"
+                value={formData.matrix_id}
+                onChange={(e) => handleMatrixChange(e.target.value)}
+                className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">Без матрицы</option>
+                {matrices.map((matrix) => (
+                  <option key={matrix.id} value={matrix.id}>
+                    {matrix.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-2">
+                Выберите матрицу для автоматического определения квадранта
+              </p>
+            </div>
+          </div>
 
           <ClientMatrixScoring
             matrices={matrices}

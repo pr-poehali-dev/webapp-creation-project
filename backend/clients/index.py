@@ -61,12 +61,16 @@ def handler(event: dict, context) -> dict:
             quadrant_filter = body.get('quadrant')
             matrix_filter = body.get('matrix_id')
             
+            deal_status_filter = body.get('deal_status_id')
+            
             query = """
                 SELECT c.id, c.company_name, c.contact_person, c.email, c.phone,
                        c.description, c.score_x, c.score_y, c.quadrant,
-                       c.matrix_id, m.name as matrix_name, c.created_at
+                       c.matrix_id, m.name as matrix_name, c.created_at,
+                       c.deal_status_id, ds.name as deal_status_name, ds.weight as deal_status_weight
                 FROM clients c
                 LEFT JOIN matrices m ON c.matrix_id = m.id
+                LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
                 WHERE c.organization_id = %s AND c.is_active = true
             """ % organization_id
             
@@ -74,6 +78,8 @@ def handler(event: dict, context) -> dict:
                 query += " AND c.quadrant = '%s'" % quadrant_filter
             if matrix_filter:
                 query += " AND c.matrix_id = %s" % matrix_filter
+            if deal_status_filter:
+                query += " AND c.deal_status_id = %s" % deal_status_filter
             
             query += " ORDER BY c.created_at DESC"
             
@@ -94,7 +100,10 @@ def handler(event: dict, context) -> dict:
                     'quadrant': row[8],
                     'matrix_id': row[9],
                     'matrix_name': row[10],
-                    'created_at': row[11].isoformat() if row[11] else None
+                    'created_at': row[11].isoformat() if row[11] else None,
+                    'deal_status_id': row[12],
+                    'deal_status_name': row[13],
+                    'deal_status_weight': row[14]
                 })
             
             return {
@@ -116,9 +125,11 @@ def handler(event: dict, context) -> dict:
             cur.execute("""
                 SELECT c.id, c.company_name, c.contact_person, c.email, c.phone,
                        c.description, c.notes, c.score_x, c.score_y, c.quadrant,
-                       c.matrix_id, m.name as matrix_name
+                       c.matrix_id, m.name as matrix_name, c.deal_status_id,
+                       ds.name as deal_status_name, ds.weight as deal_status_weight
                 FROM clients c
                 LEFT JOIN matrices m ON c.matrix_id = m.id
+                LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
                 WHERE c.id = %s AND c.organization_id = %s AND c.is_active = true
             """ % (client_id, organization_id))
             
@@ -168,6 +179,9 @@ def handler(event: dict, context) -> dict:
                 'quadrant': row[9],
                 'matrix_id': row[10],
                 'matrix_name': row[11],
+                'deal_status_id': row[12],
+                'deal_status_name': row[13],
+                'deal_status_weight': row[14],
                 'scores': scores
             }
             
@@ -190,10 +204,12 @@ def handler(event: dict, context) -> dict:
                     'isBase64Encoded': False
                 }
             
+            deal_status_id = body.get('deal_status_id')
+            
             cur.execute("""
                 INSERT INTO clients (organization_id, matrix_id, company_name, contact_person, 
-                                     email, phone, description, notes, created_by)
-                VALUES (%s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s)
+                                     email, phone, description, notes, deal_status_id, created_by)
+                VALUES (%s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s, %s)
                 RETURNING id
             """ % (
                 organization_id,
@@ -204,6 +220,7 @@ def handler(event: dict, context) -> dict:
                 body.get('phone', '').replace("'", "''"),
                 body.get('description', '').replace("'", "''"),
                 body.get('notes', '').replace("'", "''"),
+                deal_status_id if deal_status_id else 'NULL',
                 user_id
             ))
             
@@ -277,6 +294,9 @@ def handler(event: dict, context) -> dict:
                 updates.append("notes = '%s'" % body['notes'].replace("'", "''"))
             if 'matrix_id' in body:
                 updates.append("matrix_id = %s" % body['matrix_id'])
+            if 'deal_status_id' in body:
+                deal_status_id = body['deal_status_id']
+                updates.append("deal_status_id = %s" % (deal_status_id if deal_status_id else 'NULL'))
             
             updates.append("updated_at = CURRENT_TIMESTAMP")
             
