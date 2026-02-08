@@ -170,7 +170,7 @@ const Index = () => {
             <Card className="p-8 mb-12 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20">
               <div className="text-center mb-8">
                 <p className="text-2xl font-semibold text-primary mb-2">Главный вопрос менеджера:</p>
-                <p className="text-xl text-foreground italic">«С каким из 300 клиентов на рынке мне развивать работу, чтобы максимизировать вероятность закрытия сделки в ближайшие 6–12 месяцев?»</p>
+                <p className="text-xl text-foreground italic">«С каким из 300+ клиентов на рынке мне развивать работу, чтобы максимизировать вероятность закрытия сделки в ближайшие 6–12 месяцев?»</p>
               </div>
             </Card>
 
