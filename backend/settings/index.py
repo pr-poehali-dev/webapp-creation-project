@@ -117,7 +117,8 @@ def get_organization_settings(conn, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
             SELECT id, name, contact_email, contact_phone, description, 
-                   subscription_tier, subscription_status, created_at
+                   subscription_tier, subscription_status, 
+                   to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at
             FROM organizations
             WHERE id = %s
         ''', (organization_id,))
@@ -163,7 +164,8 @@ def update_organization_settings(conn, organization_id: int, body: dict):
 def list_deal_statuses(conn, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, sort_order, is_active, created_at
+            SELECT id, name, sort_order, is_active, 
+                   to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at
             FROM deal_statuses
             WHERE organization_id = %s AND is_active = TRUE
             ORDER BY sort_order, id
