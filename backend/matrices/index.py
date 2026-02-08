@@ -204,15 +204,30 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
         
         criteria = []
         for row in cur.fetchall():
+            criterion_id = row[0]
+            
+            cur.execute(
+                """SELECT label, weight, sort_order FROM criterion_statuses 
+                   WHERE criterion_id = %s ORDER BY sort_order""" % criterion_id
+            )
+            statuses = []
+            for status_row in cur.fetchall():
+                statuses.append({
+                    'label': status_row[0],
+                    'weight': status_row[1],
+                    'sort_order': status_row[2]
+                })
+            
             criteria.append({
-                'id': row[0],
+                'id': criterion_id,
                 'axis': row[1],
                 'name': row[2],
                 'description': row[3],
                 'weight': row[4],
                 'min_value': row[5],
                 'max_value': row[6],
-                'sort_order': row[7]
+                'sort_order': row[7],
+                'statuses': statuses
             })
         
         matrix['criteria'] = criteria
@@ -279,6 +294,7 @@ def handle_create(payload: dict, body: dict) -> dict:
             min_val = criterion.get('min_value', 0)
             max_val = criterion.get('max_value', 10)
             sort_order = criterion.get('sort_order', 0)
+            statuses = criterion.get('statuses', [])
             
             if not crit_name:
                 continue
@@ -287,8 +303,19 @@ def handle_create(payload: dict, body: dict) -> dict:
                 axis = 'x'
             
             cur.execute(
-                "INSERT INTO matrix_criteria (matrix_id, axis, name, description, weight, min_value, max_value, sort_order) VALUES (%s, '%s', '%s', '%s', %s, %s, %s, %s)" % (matrix_id, axis, crit_name.replace("'", "''"), crit_desc.replace("'", "''"), weight, min_val, max_val, sort_order)
+                "INSERT INTO matrix_criteria (matrix_id, axis, name, description, weight, min_value, max_value, sort_order) VALUES (%s, '%s', '%s', '%s', %s, %s, %s, %s) RETURNING id" % (matrix_id, axis, crit_name.replace("'", "''"), crit_desc.replace("'", "''"), weight, min_val, max_val, sort_order)
             )
+            criterion_id = cur.fetchone()[0]
+            
+            for status in statuses:
+                status_label = status.get('label', '').strip()
+                status_weight = status.get('weight', 1)
+                status_sort = status.get('sort_order', 0)
+                
+                if status_label:
+                    cur.execute(
+                        "INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order) VALUES (%s, '%s', %s, %s)" % (criterion_id, status_label.replace("'", "''"), status_weight, status_sort)
+                    )
         
         conn.commit()
         
@@ -383,6 +410,7 @@ def handle_update(payload: dict, body: dict) -> dict:
                 min_val = criterion.get('min_value', 0)
                 max_val = criterion.get('max_value', 10)
                 sort_order = criterion.get('sort_order', 0)
+                statuses = criterion.get('statuses', [])
                 
                 if not crit_name:
                     continue
@@ -394,10 +422,23 @@ def handle_update(payload: dict, body: dict) -> dict:
                     cur.execute(
                         "UPDATE matrix_criteria SET axis = '%s', name = '%s', description = '%s', weight = %s, min_value = %s, max_value = %s, sort_order = %s WHERE id = %s AND matrix_id = %s" % (axis, crit_name.replace("'", "''"), crit_desc.replace("'", "''"), weight, min_val, max_val, sort_order, crit_id, matrix_id)
                     )
+                    
+                    cur.execute("DELETE FROM criterion_statuses WHERE criterion_id = %s" % crit_id)
                 else:
                     cur.execute(
-                        "INSERT INTO matrix_criteria (matrix_id, axis, name, description, weight, min_value, max_value, sort_order) VALUES (%s, '%s', '%s', '%s', %s, %s, %s, %s)" % (matrix_id, axis, crit_name.replace("'", "''"), crit_desc.replace("'", "''"), weight, min_val, max_val, sort_order)
+                        "INSERT INTO matrix_criteria (matrix_id, axis, name, description, weight, min_value, max_value, sort_order) VALUES (%s, '%s', '%s', '%s', %s, %s, %s, %s) RETURNING id" % (matrix_id, axis, crit_name.replace("'", "''"), crit_desc.replace("'", "''"), weight, min_val, max_val, sort_order)
                     )
+                    crit_id = cur.fetchone()[0]
+                
+                for status in statuses:
+                    status_label = status.get('label', '').strip()
+                    status_weight = status.get('weight', 1)
+                    status_sort = status.get('sort_order', 0)
+                    
+                    if status_label:
+                        cur.execute(
+                            "INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order) VALUES (%s, '%s', %s, %s)" % (crit_id, status_label.replace("'", "''"), status_weight, status_sort)
+                        )
         
         conn.commit()
         

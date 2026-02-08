@@ -4,6 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 
+interface CriterionStatus {
+  label: string;
+  weight: number;
+  sort_order: number;
+}
+
 interface Criterion {
   id?: number;
   axis: 'x' | 'y';
@@ -13,6 +19,7 @@ interface Criterion {
   min_value: number;
   max_value: number;
   sort_order: number;
+  statuses: CriterionStatus[];
 }
 
 interface Matrix {
@@ -79,7 +86,8 @@ const MatrixEdit = () => {
         weight: 1,
         min_value: 0,
         max_value: 10,
-        sort_order: criteria.filter(c => c.axis === axis).length
+        sort_order: criteria.filter(c => c.axis === axis).length,
+        statuses: []
       }
     ]);
   };
@@ -87,6 +95,12 @@ const MatrixEdit = () => {
   const updateCriterion = (index: number, field: keyof Criterion, value: string | number) => {
     const updated = [...criteria];
     updated[index] = { ...updated[index], [field]: value };
+    setCriteria(updated);
+  };
+
+  const updateCriterionStatuses = (index: number, statuses: CriterionStatus[]) => {
+    const updated = [...criteria];
+    updated[index] = { ...updated[index], statuses };
     setCriteria(updated);
   };
 
@@ -290,30 +304,77 @@ const MatrixEdit = () => {
                 const globalIndex = criteria.findIndex(c => c === criterion);
                 return (
                   <div key={globalIndex} className="p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 space-y-3">
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
                         <input
                           type="text"
                           value={criterion.name}
                           onChange={(e) => updateCriterion(globalIndex, 'name', e.target.value)}
-                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                          className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm"
                           placeholder="Название критерия"
                         />
-                        <input
-                          type="text"
-                          value={criterion.description}
-                          onChange={(e) => updateCriterion(globalIndex, 'description', e.target.value)}
-                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
-                          placeholder="Описание"
-                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCriterion(globalIndex)}
+                        >
+                          <Icon name="Trash2" size={16} className="text-destructive" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeCriterion(globalIndex)}
-                      >
-                        <Icon name="Trash2" size={16} className="text-destructive" />
-                      </Button>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">Статусы критерия</label>
+                        {criterion.statuses.map((status, statusIdx) => (
+                          <div key={statusIdx} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={status.label}
+                              onChange={(e) => {
+                                const updated = [...criterion.statuses];
+                                updated[statusIdx] = { ...status, label: e.target.value };
+                                updateCriterionStatuses(globalIndex, updated);
+                              }}
+                              className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                              placeholder="Название статуса"
+                            />
+                            <select
+                              value={status.weight}
+                              onChange={(e) => {
+                                const updated = [...criterion.statuses];
+                                updated[statusIdx] = { ...status, weight: parseInt(e.target.value) };
+                                updateCriterionStatuses(globalIndex, updated);
+                              }}
+                              className="w-20 px-2 py-2 bg-background border border-border rounded-lg text-sm"
+                            >
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(w => (
+                                <option key={w} value={w}>{w}</option>
+                              ))}
+                            </select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = criterion.statuses.filter((_, i) => i !== statusIdx);
+                                updateCriterionStatuses(globalIndex, updated);
+                              }}
+                            >
+                              <Icon name="X" size={14} className="text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...criterion.statuses, { label: '', weight: 1, sort_order: criterion.statuses.length }];
+                            updateCriterionStatuses(globalIndex, updated);
+                          }}
+                          className="w-full text-xs"
+                        >
+                          <Icon name="Plus" size={14} className="mr-2" />
+                          Добавить статус
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -335,30 +396,77 @@ const MatrixEdit = () => {
                 const globalIndex = criteria.findIndex(c => c === criterion);
                 return (
                   <div key={globalIndex} className="p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 space-y-3">
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
                         <input
                           type="text"
                           value={criterion.name}
                           onChange={(e) => updateCriterion(globalIndex, 'name', e.target.value)}
-                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                          className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm"
                           placeholder="Название критерия"
                         />
-                        <input
-                          type="text"
-                          value={criterion.description}
-                          onChange={(e) => updateCriterion(globalIndex, 'description', e.target.value)}
-                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
-                          placeholder="Описание"
-                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCriterion(globalIndex)}
+                        >
+                          <Icon name="Trash2" size={16} className="text-destructive" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeCriterion(globalIndex)}
-                      >
-                        <Icon name="Trash2" size={16} className="text-destructive" />
-                      </Button>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">Статусы критерия</label>
+                        {criterion.statuses.map((status, statusIdx) => (
+                          <div key={statusIdx} className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={status.label}
+                              onChange={(e) => {
+                                const updated = [...criterion.statuses];
+                                updated[statusIdx] = { ...status, label: e.target.value };
+                                updateCriterionStatuses(globalIndex, updated);
+                              }}
+                              className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                              placeholder="Название статуса"
+                            />
+                            <select
+                              value={status.weight}
+                              onChange={(e) => {
+                                const updated = [...criterion.statuses];
+                                updated[statusIdx] = { ...status, weight: parseInt(e.target.value) };
+                                updateCriterionStatuses(globalIndex, updated);
+                              }}
+                              className="w-20 px-2 py-2 bg-background border border-border rounded-lg text-sm"
+                            >
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(w => (
+                                <option key={w} value={w}>{w}</option>
+                              ))}
+                            </select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = criterion.statuses.filter((_, i) => i !== statusIdx);
+                                updateCriterionStatuses(globalIndex, updated);
+                              }}
+                            >
+                              <Icon name="X" size={14} className="text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...criterion.statuses, { label: '', weight: 1, sort_order: criterion.statuses.length }];
+                            updateCriterionStatuses(globalIndex, updated);
+                          }}
+                          className="w-full text-xs"
+                        >
+                          <Icon name="Plus" size={14} className="mr-2" />
+                          Добавить статус
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
