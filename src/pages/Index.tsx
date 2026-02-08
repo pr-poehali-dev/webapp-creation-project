@@ -79,7 +79,7 @@ const Index = () => {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
               <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">О продукте</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Облачная CRM для сложных продаж</h2>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Система созданная для сложных продаж</h2>
               <p className="text-xl text-muted-foreground">TechSale CRM — это облачный web-app, заточенный фокусно под задачу технологических и проектных продаж. 
 Система адаптирована под desktop и мобильные устройства с возможностью заполнения информации без интернета</p>
             </div>
@@ -89,16 +89,16 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Icon name="Monitor" size={24} className="text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Desktop & Mobile</h3>
-                <p className="text-sm text-muted-foreground">Полноценная работа на любом устройстве с адаптивным интерфейсом</p>
+                <h3 className="text-lg font-semibold mb-2 text-left">Desktop & Mobile</h3>
+                <p className="text-sm text-muted-foreground text-left">Полноценная работа на любом устройстве с адаптивным интерфейсом</p>
               </Card>
 
               <Card className="p-6 hover:shadow-xl transition-all hover:scale-105 border-border">
                 <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
                   <Icon name="WifiOff" size={24} className="text-secondary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Оффлайн-режим</h3>
-                <p className="text-sm text-muted-foreground">Заполняйте данные без интернета, синхронизация автоматическая</p>
+                <h3 className="text-lg font-semibold mb-2 text-left">Оффлайн-режим</h3>
+                <p className="text-sm text-muted-foreground text-left">Заполняйте данные "в полях" в условиях нестабильной интернет связи</p>
               </Card>
 
               <Card className="p-6 hover:shadow-xl transition-all hover:scale-105 border-border">
@@ -106,7 +106,7 @@ const Index = () => {
                   <Icon name="Cloud" size={24} className="text-accent" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Облачное решение</h3>
-                <p className="text-sm text-muted-foreground">Доступ из любой точки мира, данные надёжно защищены</p>
+                <p className="text-sm text-muted-foreground text-left">Не требует ресурсов для развертывания</p>
               </Card>
             </div>
           </div>
