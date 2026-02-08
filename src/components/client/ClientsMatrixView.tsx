@@ -56,22 +56,22 @@ const ClientsMatrixView = ({ clients, onClientClick, getQuadrantConfig }: Client
     <div className="flex justify-center">
       <div className="relative bg-card border border-border rounded-lg p-8" style={{ width: GRAPH_SIZE + 100, height: GRAPH_SIZE + 100 }}>
         <div className="relative" style={{ width: GRAPH_SIZE, height: GRAPH_SIZE }}>
-          <div className={`absolute ${getQuadrantColor('monitor')} border-2`} style={{ left: 0, top: 0, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
-          <div className={`absolute ${getQuadrantColor('focus')} border-2`} style={{ left: GRAPH_SIZE / 2, top: 0, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
-          <div className={`absolute ${getQuadrantColor('archive')} border-2`} style={{ left: 0, top: GRAPH_SIZE / 2, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
-          <div className={`absolute ${getQuadrantColor('grow')} border-2`} style={{ left: GRAPH_SIZE / 2, top: GRAPH_SIZE / 2, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
+          <div className={`absolute ${getQuadrantColor('focus')} border-2`} style={{ left: 0, top: 0, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
+          <div className={`absolute ${getQuadrantColor('monitor')} border-2`} style={{ left: GRAPH_SIZE / 2, top: 0, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
+          <div className={`absolute ${getQuadrantColor('grow')} border-2`} style={{ left: 0, top: GRAPH_SIZE / 2, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
+          <div className={`absolute ${getQuadrantColor('archive')} border-2`} style={{ left: GRAPH_SIZE / 2, top: GRAPH_SIZE / 2, width: GRAPH_SIZE / 2, height: GRAPH_SIZE / 2 }}></div>
 
           <div className="absolute flex items-center justify-center" style={{ left: GRAPH_SIZE / 4 - 60, top: GRAPH_SIZE / 4 - 20, width: 120 }}>
-            <Badge className="bg-yellow-900/80 text-yellow-100">Мониторить</Badge>
-          </div>
-          <div className="absolute flex items-center justify-center" style={{ left: GRAPH_SIZE * 3 / 4 - 60, top: GRAPH_SIZE / 4 - 20, width: 120 }}>
             <Badge className="bg-green-900/80 text-green-100">Фокус сейчас</Badge>
           </div>
+          <div className="absolute flex items-center justify-center" style={{ left: GRAPH_SIZE * 3 / 4 - 60, top: GRAPH_SIZE / 4 - 20, width: 120 }}>
+            <Badge className="bg-yellow-900/80 text-yellow-100">Мониторить</Badge>
+          </div>
           <div className="absolute flex items-center justify-center" style={{ left: GRAPH_SIZE / 4 - 60, top: GRAPH_SIZE * 3 / 4 - 20, width: 120 }}>
-            <Badge className="bg-gray-700/80 text-gray-300">Архив</Badge>
+            <Badge className="bg-blue-900/80 text-blue-100">Выращивать</Badge>
           </div>
           <div className="absolute flex items-center justify-center" style={{ left: GRAPH_SIZE * 3 / 4 - 60, top: GRAPH_SIZE * 3 / 4 - 20, width: 120 }}>
-            <Badge className="bg-blue-900/80 text-blue-100">Выращивать</Badge>
+            <Badge className="bg-gray-700/80 text-gray-300">Архив</Badge>
           </div>
 
           <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border"></div>
