@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "Get organization settings",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "get_settings"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "organization": {
+          "id": "number",
+          "name": "string"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "List deal statuses",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "list_deal_statuses"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "statuses": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

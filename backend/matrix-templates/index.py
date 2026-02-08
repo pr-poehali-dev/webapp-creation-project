@@ -204,11 +204,6 @@ def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organi
         ''', (organization_id, matrix_name, matrix_description, user_id))
         matrix_id = cur.fetchone()['id']
         
-        cur.execute('''
-            INSERT INTO matrix_criteria (matrix_id, axis, name, weight, min_value, max_value, description, sort_order)
-            VALUES (%s, 'universal', 'Зрелость потребности', 1, 0, 10, 'Насколько клиент осознаёт потребность в решении', 1)
-        ''', (matrix_id,))
-        
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Пустая матрица создана'}
 

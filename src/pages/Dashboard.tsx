@@ -170,6 +170,14 @@ const Dashboard = () => {
               <Icon name="Upload" size={16} className="mr-2" />
               Импорт
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/settings')}
+            >
+              <Icon name="Settings" size={16} className="mr-2" />
+              Настройки
+            </Button>
           </nav>
         </div>
       </header>

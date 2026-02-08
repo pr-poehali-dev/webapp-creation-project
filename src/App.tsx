@@ -18,6 +18,7 @@ import ClientNew from "./pages/ClientNew";
 import ClientEdit from "./pages/ClientEdit";
 import Export from "./pages/Export";
 import Import from "./pages/Import";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/client/:id" element={<ClientEdit />} />
           <Route path="/export" element={<Export />} />
           <Route path="/import" element={<Import />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
