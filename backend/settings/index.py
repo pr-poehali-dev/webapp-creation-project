@@ -163,7 +163,7 @@ def update_organization_settings(conn, organization_id: int, body: dict):
 def list_deal_statuses(conn, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, weight, sort_order, is_active, created_at
+            SELECT id, name, sort_order, is_active, created_at
             FROM deal_statuses
             WHERE organization_id = %s AND is_active = TRUE
             ORDER BY sort_order, id
@@ -174,13 +174,9 @@ def list_deal_statuses(conn, organization_id: int):
 
 def create_deal_status(conn, organization_id: int, body: dict):
     name = body.get('name', '').strip()
-    weight = body.get('weight', 0)
     
     if not name:
         raise ValueError('Название статуса обязательно')
-    
-    if not (0 <= weight <= 10):
-        raise ValueError('Вес должен быть от 0 до 10')
     
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
@@ -200,10 +196,10 @@ def create_deal_status(conn, organization_id: int, body: dict):
         next_order = cur.fetchone()['next_order']
         
         cur.execute('''
-            INSERT INTO deal_statuses (organization_id, name, weight, sort_order)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO deal_statuses (organization_id, name, sort_order)
+            VALUES (%s, %s, %s)
             RETURNING id
-        ''', (organization_id, name, weight, next_order))
+        ''', (organization_id, name, next_order))
         status_id = cur.fetchone()['id']
         
         conn.commit()
@@ -231,12 +227,6 @@ def update_deal_status(conn, organization_id: int, body: dict):
         if 'name' in body:
             updates.append("name = %s")
             params.append(body['name'])
-        if 'weight' in body:
-            weight = body['weight']
-            if not (0 <= weight <= 10):
-                raise ValueError('Вес должен быть от 0 до 10')
-            updates.append("weight = %s")
-            params.append(weight)
         if 'sort_order' in body:
             updates.append("sort_order = %s")
             params.append(body['sort_order'])
@@ -292,18 +282,18 @@ def init_default_statuses(conn, organization_id: int):
             return {'message': 'Статусы уже существуют', 'count': count}
         
         default_statuses = [
-            ('Холодный клиент', 2, 1),
-            ('Переговоры состоялись', 4, 2),
-            ('Подписан пилотный проект', 6, 3),
-            ('Согласован бюджет', 8, 4),
-            ('Подписан договор на сотрудничество', 10, 5),
+            ('Холодный клиент', 1),
+            ('Переговоры состоялись', 2),
+            ('Подписан пилотный проект', 3),
+            ('Согласован бюджет', 4),
+            ('Подписан договор на сотрудничество', 5),
         ]
         
-        for name, weight, sort_order in default_statuses:
+        for name, sort_order in default_statuses:
             cur.execute('''
-                INSERT INTO deal_statuses (organization_id, name, weight, sort_order)
-                VALUES (%s, %s, %s, %s)
-            ''', (organization_id, name, weight, sort_order))
+                INSERT INTO deal_statuses (organization_id, name, sort_order)
+                VALUES (%s, %s, %s)
+            ''', (organization_id, name, sort_order))
         
         conn.commit()
         return {'message': 'Созданы 5 дефолтных статусов', 'count': 5}

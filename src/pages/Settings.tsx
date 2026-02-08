@@ -18,7 +18,6 @@ interface Organization {
 interface DealStatus {
   id: number;
   name: string;
-  weight: number;
   sort_order: number;
 }
 
@@ -40,7 +39,6 @@ const Settings = () => {
 
   const [newStatus, setNewStatus] = useState({
     name: '',
-    weight: 5,
   });
 
   useEffect(() => {
@@ -161,7 +159,6 @@ const Settings = () => {
         body: JSON.stringify({
           action: 'create_deal_status',
           name: newStatus.name,
-          weight: newStatus.weight,
         }),
       });
 
@@ -172,8 +169,8 @@ const Settings = () => {
       }
 
       setSuccess('Статус сделки создан');
-      setNewStatus({ name: '', weight: 5 });
-      fetchDealStatuses();
+      setNewStatus({ name: '' });
+      await fetchDealStatuses();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка создания статуса');
     } finally {
@@ -181,7 +178,7 @@ const Settings = () => {
     }
   };
 
-  const handleUpdateStatus = async (statusId: number, name: string, weight: number) => {
+  const handleUpdateStatus = async (statusId: number, name: string) => {
     setError('');
     setSuccess('');
 
@@ -197,7 +194,6 @@ const Settings = () => {
           action: 'update_deal_status',
           status_id: statusId,
           name,
-          weight,
         }),
       });
 
