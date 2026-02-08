@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import ClientsMatrixView from '@/components/client/ClientsMatrixView';
+import ClientsListView from '@/components/client/ClientsListView';
 
 interface Client {
   id: number;
@@ -30,14 +32,24 @@ interface DealStatus {
   sort_order: number;
 }
 
+interface Matrix {
+  id: number;
+  name: string;
+}
+
+type ViewMode = 'matrix' | 'list';
+
 const Clients = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
+  const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [dealStatuses, setDealStatuses] = useState<DealStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterQuadrant, setFilterQuadrant] = useState<string>('');
   const [filterDealStatus, setFilterDealStatus] = useState<string>('');
+  const [filterMatrix, setFilterMatrix] = useState<string>('');
   const [hasMatrices, setHasMatrices] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('matrix');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -49,7 +61,7 @@ const Clients = () => {
     fetchClients();
     checkMatrices();
     fetchDealStatuses();
-  }, [navigate, filterQuadrant, filterDealStatus]);
+  }, [navigate, filterQuadrant, filterDealStatus, filterMatrix]);
 
   const checkMatrices = async () => {
     try {
@@ -65,7 +77,11 @@ const Clients = () => {
 
       const data = await response.json();
       if (response.ok) {
+        setMatrices(data.matrices || []);
         setHasMatrices(data.matrices && data.matrices.length > 0);
+        if (data.matrices && data.matrices.length > 0) {
+          setFilterMatrix(data.matrices[0].id.toString());
+        }
       }
     } catch (error) {
       console.error('Ошибка проверки матриц:', error);
@@ -104,6 +120,7 @@ const Clients = () => {
           action: 'list',
           quadrant: filterQuadrant || undefined,
           deal_status_id: filterDealStatus ? parseInt(filterDealStatus) : undefined,
+          matrix_id: filterMatrix ? parseInt(filterMatrix) : undefined,
         }),
       });
 
@@ -172,6 +189,48 @@ const Clients = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1">
+              <Button
+                variant={viewMode === 'matrix' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('matrix')}
+                className="flex items-center gap-2"
+              >
+                <Icon name="Grid3x3" size={16} />
+                Матрица клиентов
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="flex items-center gap-2"
+              >
+                <Icon name="List" size={16} />
+                Список клиентов
+              </Button>
+            </div>
+
+            {matrices.length > 1 && viewMode === 'matrix' && (
+              <div className="flex items-center gap-2">
+                <Icon name="Layout" size={20} className="text-muted-foreground" />
+                <select
+                  value={filterMatrix}
+                  onChange={(e) => setFilterMatrix(e.target.value)}
+                  className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {matrices.map((matrix) => (
+                    <option key={matrix.id} value={matrix.id}>
+                      {matrix.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="mb-6 flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Icon name="Filter" size={20} className="text-muted-foreground" />
@@ -279,7 +338,7 @@ const Clients = () => {
           <div className="flex items-center justify-center py-12">
             <Icon name="Loader2" size={32} className="animate-spin text-primary" />
           </div>
-        ) : clients.length === 0 ? (
+        ) : clients.length === 0 && viewMode === 'list' ? (
           <Card className="p-12 text-center border-dashed">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
               <Icon name="Building2" size={40} className="text-primary" />
@@ -301,73 +360,18 @@ const Clients = () => {
               </Button>
             </Link>
           </Card>
+        ) : viewMode === 'matrix' ? (
+          <ClientsMatrixView
+            clients={clients}
+            onClientClick={(id) => navigate(`/client/${id}`)}
+            getQuadrantConfig={getQuadrantConfig}
+          />
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clients.map((client) => {
-              const quadrantConfig = getQuadrantConfig(client.quadrant);
-              return (
-                <Card
-                  key={client.id}
-                  className="p-6 hover:shadow-xl transition-all cursor-pointer border-border"
-                  onClick={() => navigate(`/client/${client.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-1">{client.company_name}</h3>
-                      {client.contact_person && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Icon name="User" size={14} />
-                          {client.contact_person}
-                        </p>
-                      )}
-                    </div>
-                    <Badge className={quadrantConfig.color}>
-                      {quadrantConfig.label}
-                    </Badge>
-                  </div>
-
-                  {client.description && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {client.description}
-                    </p>
-                  )}
-
-                  <div className="space-y-2 mb-4">
-                    {client.email && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Icon name="Mail" size={14} />
-                        <span className="truncate">{client.email}</span>
-                      </div>
-                    )}
-                    {client.phone && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Icon name="Phone" size={14} />
-                        <span>{client.phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-4 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">X: </span>
-                        <span className="font-semibold">{client.score_x.toFixed(1)}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Y: </span>
-                        <span className="font-semibold">{client.score_y.toFixed(1)}</span>
-                      </div>
-                    </div>
-                    {client.matrix_name && (
-                      <Badge variant="outline" className="text-xs">
-                        {client.matrix_name}
-                      </Badge>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+          <ClientsListView
+            clients={clients}
+            onClientClick={(id) => navigate(`/client/${id}`)}
+            getQuadrantConfig={getQuadrantConfig}
+          />
         )}
       </div>
     </div>
