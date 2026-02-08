@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
-import UserPermissionsDialog from '@/components/team/UserPermissionsDialog';
+
 
 interface User {
   id: number;
@@ -43,9 +43,7 @@ const Team = () => {
   const [inviteRole, setInviteRole] = useState('manager');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<number | undefined>();
-  const [selectedUserRole, setSelectedUserRole] = useState('manager');
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -125,8 +123,6 @@ const Team = () => {
       setSuccess('Приглашение отправлено!');
       setInviteEmail('');
       setShowInviteModal(false);
-      setShowPermissionsDialog(true);
-      setSelectedUserRole(inviteRole);
       fetchData(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
@@ -275,17 +271,6 @@ const Team = () => {
 
                   {canManage && user.role !== 'owner' && user.id !== currentUser?.id && (
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedUserId(user.id);
-                          setSelectedUserRole(user.role);
-                          setShowPermissionsDialog(true);
-                        }}
-                      >
-                        <Icon name="Settings" size={16} />
-                      </Button>
                       {user.is_active ? (
                         <Button
                           variant="ghost"
@@ -393,46 +378,6 @@ const Team = () => {
           </Card>
         </div>
       )}
-
-      <UserPermissionsDialog
-        isOpen={showPermissionsDialog}
-        onClose={() => {
-          setShowPermissionsDialog(false);
-          setSelectedUserId(undefined);
-        }}
-        userId={selectedUserId}
-        role={selectedUserRole}
-        onSave={async (permissions) => {
-          const token = localStorage.getItem('token');
-          if (!token) return;
-
-          try {
-            const response = await fetch('https://functions.poehali.dev/b444253a-2d33-4d1d-8e79-57fde40bbc5d', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                action: 'update_permissions',
-                user_id: selectedUserId,
-                ...permissions
-              })
-            });
-
-            if (response.ok) {
-              setSuccess('Права пользователя обновлены');
-              setShowPermissionsDialog(false);
-              setSelectedUserId(undefined);
-            } else {
-              setError('Ошибка обновления прав');
-            }
-          } catch (err) {
-            console.error('Error updating permissions:', err);
-            setError('Ошибка обновления прав');
-          }
-        }}
-      />
     </div>
   );
 };

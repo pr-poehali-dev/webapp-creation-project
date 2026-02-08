@@ -6,6 +6,7 @@ import Icon from '@/components/ui/icon';
 import OrganizationSettingsForm from '@/components/settings/OrganizationSettingsForm';
 import DealStatusCreateForm from '@/components/settings/DealStatusCreateForm';
 import DealStatusList from '@/components/settings/DealStatusList';
+import UserPermissionsSection from '@/components/settings/UserPermissionsSection';
 
 interface Organization {
   id: number;
@@ -29,6 +30,7 @@ const Settings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'organization' | 'statuses' | 'permissions'>('organization');
 
   const [orgForm, setOrgForm] = useState({
     name: '',
@@ -292,7 +294,7 @@ const Settings = () => {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Настройки</h1>
-                <p className="text-sm text-muted-foreground">Управление организацией и статусами сделок</p>
+                <p className="text-sm text-muted-foreground">Управление организацией, статусами и правами доступа</p>
               </div>
             </div>
           </div>
@@ -314,14 +316,44 @@ const Settings = () => {
           </div>
         )}
 
+        <div className="mb-6 flex gap-2 border-b border-border">
+          <Button
+            variant={activeTab === 'organization' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('organization')}
+            className="rounded-b-none"
+          >
+            <Icon name="Building2" size={16} className="mr-2" />
+            Организация
+          </Button>
+          <Button
+            variant={activeTab === 'statuses' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('statuses')}
+            className="rounded-b-none"
+          >
+            <Icon name="ListChecks" size={16} className="mr-2" />
+            Статусы сделок
+          </Button>
+          <Button
+            variant={activeTab === 'permissions' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('permissions')}
+            className="rounded-b-none"
+          >
+            <Icon name="Shield" size={16} className="mr-2" />
+            Права доступа
+          </Button>
+        </div>
+
         <div className="space-y-6">
-          <OrganizationSettingsForm
+          {activeTab === 'organization' && (
+            <OrganizationSettingsForm
             orgForm={orgForm}
             setOrgForm={setOrgForm}
             onSubmit={handleSaveOrganization}
             loading={loading}
           />
+          )}
 
+          {activeTab === 'statuses' && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -356,6 +388,14 @@ const Settings = () => {
               onDelete={handleDeleteStatus}
             />
           </Card>
+          )}
+
+          {activeTab === 'permissions' && (
+            <UserPermissionsSection
+              onError={(err) => setError(err)}
+              onSuccess={(msg) => setSuccess(msg)}
+            />
+          )}
         </div>
       </div>
     </div>
