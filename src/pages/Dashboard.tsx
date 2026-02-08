@@ -13,6 +13,15 @@ interface User {
   organization_name: string;
 }
 
+interface UserPermissions {
+  client_visibility: string;
+  client_edit: string;
+  matrix_access: string;
+  team_access: string;
+  import_export: string;
+  settings_access: boolean;
+}
+
 interface Stats {
   total_clients: number;
   total_matrices: number;
@@ -22,6 +31,7 @@ interface Stats {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [stats, setStats] = useState<Stats>({ total_clients: 0, total_matrices: 0, focus_clients: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -35,8 +45,30 @@ const Dashboard = () => {
     }
 
     setUser(JSON.parse(userData));
+    fetchPermissions(token);
     fetchStats();
   }, [navigate]);
+
+  const fetchPermissions = async (token: string) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/b444253a-2d33-4d1d-8e79-57fde40bbc5d', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'get_permissions' }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.permissions) {
+        setPermissions(data.permissions);
+        localStorage.setItem('permissions', JSON.stringify(data.permissions));
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки прав:', error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -65,7 +97,7 @@ const Dashboard = () => {
       const matricesData = await matricesRes.json();
 
       const totalClients = clientsData.clients?.length || 0;
-      const focusClients = clientsData.clients?.filter((c: any) => c.quadrant === 'focus').length || 0;
+      const focusClients = clientsData.clients?.filter((c: { quadrant: string }) => c.quadrant === 'focus').length || 0;
       const totalMatrices = matricesData.matrices?.length || 0;
 
       setStats({
@@ -138,46 +170,56 @@ const Dashboard = () => {
               <Icon name="Building2" size={16} className="mr-2" />
               Клиенты
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/matrices')}
-            >
-              <Icon name="Grid3x3" size={16} className="mr-2" />
-              Матрицы
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/team')}
-            >
-              <Icon name="Users" size={16} className="mr-2" />
-              Команда
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/export')}
-            >
-              <Icon name="Download" size={16} className="mr-2" />
-              Экспорт
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/import')}
-            >
-              <Icon name="Upload" size={16} className="mr-2" />
-              Импорт
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/settings')}
-            >
-              <Icon name="Settings" size={16} className="mr-2" />
-              Настройки
-            </Button>
+            {permissions?.matrix_access !== 'none' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/matrices')}
+              >
+                <Icon name="Grid3x3" size={16} className="mr-2" />
+                Матрицы
+              </Button>
+            )}
+            {permissions?.team_access !== 'none' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/team')}
+              >
+                <Icon name="Users" size={16} className="mr-2" />
+                Команда
+              </Button>
+            )}
+            {permissions?.import_export !== 'none' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/export')}
+              >
+                <Icon name="Download" size={16} className="mr-2" />
+                Экспорт
+              </Button>
+            )}
+            {permissions?.import_export === 'both' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/import')}
+              >
+                <Icon name="Upload" size={16} className="mr-2" />
+                Импорт
+              </Button>
+            )}
+            {permissions?.settings_access && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/settings')}
+              >
+                <Icon name="Settings" size={16} className="mr-2" />
+                Настройки
+              </Button>
+            )}
           </nav>
         </div>
       </header>

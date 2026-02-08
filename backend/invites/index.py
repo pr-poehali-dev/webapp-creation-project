@@ -140,11 +140,11 @@ def handle_create(payload: dict, body: dict) -> dict:
             'body': json.dumps({'error': 'Email is required'})
         }
     
-    if role not in ['admin', 'manager', 'viewer']:
+    if role not in ['admin', 'manager', 'department_head']:
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Invalid role. Use: admin, manager, or viewer'})
+            'body': json.dumps({'error': 'Invalid role. Use: admin, manager, or department_head'})
         }
     
     organization_id = payload['organization_id']
@@ -266,6 +266,18 @@ def handle_accept(body: dict) -> dict:
             "INSERT INTO users (organization_id, email, password_hash, full_name, role) VALUES (%s, '%s', '%s', '%s', '%s') RETURNING id" % (organization_id, email, password_hash, full_name, role)
         )
         user_id = cur.fetchone()[0]
+        
+        # Создаем дефолтные права для нового пользователя
+        if role == 'admin':
+            perms = ('all', 'full', 'create', 'invite', 'both', 'true')
+        elif role == 'department_head':
+            perms = ('all', 'full', 'create', 'invite', 'both', 'false')
+        else:
+            perms = ('own', 'no_delete', 'view', 'view', 'none', 'false')
+        
+        cur.execute(
+            "INSERT INTO user_permissions (user_id, organization_id, client_visibility, client_edit, matrix_access, team_access, import_export, settings_access) VALUES (%s, %s, '%s', '%s', '%s', '%s', '%s', %s)" % (user_id, organization_id, perms[0], perms[1], perms[2], perms[3], perms[4], perms[5])
+        )
         
         cur.execute(
             "UPDATE invitations SET status = 'accepted', accepted_at = CURRENT_TIMESTAMP WHERE id = %s" % invitation_id

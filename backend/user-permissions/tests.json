@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "Get default permissions for manager",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "action": "get_default_permissions",
+        "role": "manager"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "permissions": {
+          "client_visibility": "own",
+          "matrix_access": "view"
+        }
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
