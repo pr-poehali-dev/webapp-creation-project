@@ -89,6 +89,8 @@ def handler(event: dict, context) -> dict:
                 return handle_update(payload, body)
             elif action == 'delete':
                 return handle_delete(payload, body)
+            elif action == 'delete_permanently':
+                return handle_delete_permanently(payload, body)
             else:
                 return {
                     'statusCode': 400,
@@ -122,15 +124,20 @@ def handle_list(payload: dict) -> dict:
     
     try:
         cur.execute(
+            "DELETE FROM matrices WHERE deleted_at < NOW() - INTERVAL '3 days'"
+        )
+        conn.commit()
+        
+        cur.execute(
             """
-            SELECT m.id, m.name, m.description, m.is_active, m.created_at, u.full_name,
+            SELECT m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name,
                    COUNT(DISTINCT mc.id) as criteria_count
             FROM matrices m
             LEFT JOIN users u ON m.created_by = u.id
             LEFT JOIN matrix_criteria mc ON m.id = mc.matrix_id
             WHERE m.organization_id = %s
-            GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, u.full_name
-            ORDER BY m.is_active DESC, m.created_at DESC
+            GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name
+            ORDER BY m.deleted_at IS NULL DESC, m.is_active DESC, m.created_at DESC
             """ % organization_id
         )
         
@@ -142,8 +149,9 @@ def handle_list(payload: dict) -> dict:
                 'description': row[2],
                 'is_active': row[3],
                 'created_at': row[4].isoformat() if row[4] else None,
-                'created_by_name': row[5],
-                'criteria_count': row[6]
+                'deleted_at': row[5].isoformat() if row[5] else None,
+                'created_by_name': row[6],
+                'criteria_count': row[7]
             })
         
         return {
@@ -458,7 +466,7 @@ def handle_update(payload: dict, body: dict) -> dict:
 
 
 def handle_delete(payload: dict, body: dict) -> dict:
-    """Деактивация матрицы"""
+    """Деактивация матрицы (мягкое удаление)"""
     if payload['role'] not in ['owner', 'admin']:
         return {
             'statusCode': 403,
@@ -504,7 +512,7 @@ def handle_delete(payload: dict, body: dict) -> dict:
                 'isBase64Encoded': False
             }
         
-        cur.execute("UPDATE matrices SET is_active = false WHERE id = %s" % matrix_id)
+        cur.execute("UPDATE matrices SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s" % matrix_id)
         conn.commit()
         
         return {
@@ -512,7 +520,80 @@ def handle_delete(payload: dict, body: dict) -> dict:
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({
                 'success': True,
-                'message': 'Matrix deactivated successfully'
+                'message': 'Матрица будет автоматически удалена через 3 дня'
+            }),
+            'isBase64Encoded': False
+        }
+    
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_delete_permanently(payload: dict, body: dict) -> dict:
+    """Полное удаление матрицы"""
+    if payload['role'] not in ['owner', 'admin']:
+        return {
+            'statusCode': 403,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Only owner and admin can permanently delete matrices'}),
+            'isBase64Encoded': False
+        }
+    
+    matrix_id = body.get('matrix_id')
+    
+    if not matrix_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'matrix_id is required'}),
+            'isBase64Encoded': False
+        }
+    
+    organization_id = payload['organization_id']
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute(
+            "SELECT organization_id, deleted_at FROM matrices WHERE id = %s" % matrix_id
+        )
+        result = cur.fetchone()
+        
+        if not result:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Matrix not found'}),
+                'isBase64Encoded': False
+            }
+        
+        if result[0] != organization_id:
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Cannot delete matrix from different organization'}),
+                'isBase64Encoded': False
+            }
+        
+        if result[1] is None:
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Matrix must be deleted first before permanent deletion'}),
+                'isBase64Encoded': False
+            }
+        
+        cur.execute("DELETE FROM matrices WHERE id = %s" % matrix_id)
+        conn.commit()
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'success': True,
+                'message': 'Матрица удалена навсегда'
             }),
             'isBase64Encoded': False
         }

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import { toast } from 'sonner';
 
 interface CriterionStatus {
   label: string;
@@ -161,7 +162,7 @@ const MatrixEdit = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Вы уверены, что хотите деактивировать эту матрицу?')) {
+    if (!confirm('Матрица будет автоматически удалена через 3 дня. Вы сможете удалить её раньше в разделе "Удалённые". Продолжить?')) {
       return;
     }
 
@@ -181,11 +182,18 @@ const MatrixEdit = () => {
         })
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
+        toast.info('Матрица будет удалена через 3 дня', {
+          description: 'Вы можете удалить её навсегда в разделе "Матрицы"'
+        });
         navigate('/matrices');
+      } else {
+        toast.error(data.error || 'Ошибка удаления');
       }
     } catch (err) {
-      console.error('Error deleting matrix:', err);
+      toast.error('Ошибка удаления матрицы');
     }
   };
 

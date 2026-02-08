@@ -78,7 +78,7 @@ const MatrixNew = () => {
 
       const data = await response.json();
       if (response.ok) {
-        navigate(`/matrices/${data.matrix_id}`);
+        navigate(`/matrix/${data.matrix_id}`);
       } else {
         setError(data.error || 'Ошибка создания матрицы');
       }
