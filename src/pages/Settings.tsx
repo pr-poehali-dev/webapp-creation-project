@@ -301,7 +301,7 @@ const Settings = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-4xl">
         {error && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-destructive flex-shrink-0 mt-0.5" />

@@ -66,14 +66,14 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
-      <Card className="w-full max-w-md p-8 border-border">
-        <div className="mb-8 text-center">
-          <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-4">
-            <Icon name="Zap" size={32} className="text-white" />
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 sm:px-6 py-4">
+      <Card className="w-full max-w-md p-5 sm:p-7 border-border">
+        <div className="mb-5 sm:mb-7 text-center">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2.5 sm:mb-3">
+            <Icon name="Zap" className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Создать аккаунт</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Создать аккаунт</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Начните работать с TechSale CRM уже сегодня
           </p>
         </div>
@@ -85,9 +85,9 @@ const Signup = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3">
           <div>
-            <label htmlFor="organization_name" className="block text-sm font-medium mb-2">
+            <label htmlFor="organization_name" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-1.5">
               Название организации
             </label>
             <input
@@ -96,13 +96,13 @@ const Signup = () => {
               required
               value={formData.organization_name}
               onChange={(e) => setFormData({ ...formData, organization_name: e.target.value })}
-              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="ООО «Технологии будущего»"
             />
           </div>
 
           <div>
-            <label htmlFor="full_name" className="block text-sm font-medium mb-2">
+            <label htmlFor="full_name" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-1.5">
               Ваше имя
             </label>
             <input
@@ -111,13 +111,13 @@ const Signup = () => {
               required
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Иван Иванов"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <label htmlFor="email" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-1.5">
               Email
             </label>
             <input
@@ -126,13 +126,13 @@ const Signup = () => {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="ivan@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+            <label htmlFor="password" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-1.5">
               Пароль
             </label>
             <input
@@ -141,13 +141,13 @@ const Signup = () => {
               required
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Минимум 8 символов"
             />
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+            <label htmlFor="confirmPassword" className="block text-xs sm:text-sm font-medium mb-1 sm:mb-1.5">
               Подтвердите пароль
             </label>
             <input
@@ -156,32 +156,32 @@ const Signup = () => {
               required
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Повторите пароль"
             />
           </div>
 
           <Button
             type="submit"
-            className="w-full gradient-primary h-12 text-base font-semibold"
+            className="w-full gradient-primary h-9 sm:h-10 text-sm sm:text-base font-semibold mt-3 sm:mt-4"
             disabled={loading}
           >
             {loading ? (
               <>
-                <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                <Icon name="Loader2" className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                 Создаём аккаунт...
               </>
             ) : (
               <>
-                <Icon name="Rocket" size={20} className="mr-2" />
+                <Icon name="Rocket" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Создать аккаунт
               </>
             )}
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-3 sm:mt-4 text-center">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Уже есть аккаунт?{' '}
             <Link to="/login" className="text-primary hover:underline font-medium">
               Войти
@@ -189,8 +189,8 @@ const Signup = () => {
           </p>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-center text-muted-foreground">
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
+          <p className="text-[10px] sm:text-xs text-center text-muted-foreground leading-relaxed">
             Регистрируясь, вы принимаете{' '}
             <a href="#" className="text-primary hover:underline">
               пользовательское соглашение
