@@ -288,24 +288,29 @@ const Clients = () => {
             ) : (
               <>
                 {matrices.length > 1 && (
-                <div className="mb-8 flex items-center justify-center gap-4">
-                  <Icon name="Layout" size={20} className="text-muted-foreground" />
-                  <select
-                    value={selectedMatrix?.id || ''}
-                    onChange={(e) => {
-                      const matrix = matrices.find(m => m.id === parseInt(e.target.value));
+                <div className="mb-6">
+                  <Tabs 
+                    value={selectedMatrix?.id.toString() || ''} 
+                    onValueChange={(value) => {
+                      const matrix = matrices.find(m => m.id === parseInt(value));
                       setSelectedMatrix(matrix || null);
                       setShowList(false);
                       setSelectedQuadrant('');
                     }}
-                    className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    {matrices.map((matrix) => (
-                      <option key={matrix.id} value={matrix.id}>
-                        {matrix.name}
-                      </option>
-                    ))}
-                  </select>
+                    <TabsList className="w-full justify-start h-auto flex-wrap gap-2">
+                      {matrices.map((matrix) => (
+                        <TabsTrigger 
+                          key={matrix.id} 
+                          value={matrix.id.toString()}
+                          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        >
+                          <Icon name="Grid3x3" size={14} className="mr-2" />
+                          {matrix.name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
                 </div>
               )}
 

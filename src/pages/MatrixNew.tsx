@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Template {
   id: number;
@@ -11,6 +12,18 @@ interface Template {
   is_system: boolean;
   axis_x_name?: string;
   axis_y_name?: string;
+  criteria?: Criterion[];
+}
+
+interface Criterion {
+  id: number;
+  axis: string;
+  name: string;
+  weight: number;
+  min_value: number;
+  max_value: number;
+  hint: string;
+  sort_order: number;
 }
 
 const TEMPLATES_URL = 'https://functions.poehali.dev/76b771f4-a3b6-4259-be9c-4fda0848867a';
@@ -18,9 +31,9 @@ const TEMPLATES_URL = 'https://functions.poehali.dev/76b771f4-a3b6-4259-be9c-4fd
 const MatrixNew = () => {
   const navigate = useNavigate();
   
-  const [step, setStep] = useState<'select' | 'name'>('select');
+  const [currentStep, setCurrentStep] = useState<'template' | 'params' | 'preview'>('template');
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [matrixName, setMatrixName] = useState('');
   const [matrixDescription, setMatrixDescription] = useState('');
   const [axisXName, setAxisXName] = useState('');
@@ -49,10 +62,8 @@ const MatrixNew = () => {
     }
   };
 
-  const handleTemplateSelect = async (templateId: number | null) => {
-    setSelectedTemplate(templateId);
-    
-    if (templateId !== null) {
+  const handleTemplateSelect = async (template: Template | null) => {
+    if (template) {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(TEMPLATES_URL, {
@@ -63,32 +74,38 @@ const MatrixNew = () => {
           },
           body: JSON.stringify({
             action: 'get_template',
-            template_id: templateId
+            template_id: template.id
           })
         });
         
         const data = await response.json();
         if (response.ok && data.template) {
-          setAxisXName(data.template.axis_x_name || '');
-          setAxisYName(data.template.axis_y_name || '');
+          setSelectedTemplate(data.template);
+          setAxisXName(data.template.axis_x_name || 'Ось X');
+          setAxisYName(data.template.axis_y_name || 'Ось Y');
         }
       } catch (error) {
         console.error('Ошибка загрузки шаблона:', error);
       }
     } else {
-      setAxisXName('');
-      setAxisYName('');
+      setSelectedTemplate(null);
+      setAxisXName('Ось X');
+      setAxisYName('Ось Y');
     }
     
-    setStep('name');
+    setCurrentStep('params');
   };
 
-  const createMatrix = async () => {
+  const handleNextToPreview = () => {
     if (!matrixName) {
       setError('Введите название матрицы');
       return;
     }
+    setError('');
+    setCurrentStep('preview');
+  };
 
+  const createMatrix = async () => {
     setLoading(true);
     setError('');
 
@@ -103,11 +120,11 @@ const MatrixNew = () => {
         },
         body: JSON.stringify({
           action: selectedTemplate === null ? 'create_custom' : 'create_from_template',
-          template_id: selectedTemplate,
+          template_id: selectedTemplate?.id,
           matrix_name: matrixName,
           matrix_description: matrixDescription,
-          axis_x_name: axisXName || 'Ось X',
-          axis_y_name: axisYName || 'Ось Y'
+          axis_x_name: axisXName,
+          axis_y_name: axisYName
         })
       });
 
@@ -124,12 +141,15 @@ const MatrixNew = () => {
     }
   };
 
-  const templateIcons = {
+  const templateIcons: Record<string, string> = {
     'Продажи ИИ-продуктов': 'Brain',
     'Сложное техническое оборудование': 'Cog',
     'Корпоративное ПО': 'Code',
     'Консалтинг': 'Briefcase'
   };
+
+  const canGoToParams = selectedTemplate !== null || selectedTemplate === null;
+  const canGoToPreview = matrixName.trim() !== '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,26 +159,57 @@ const MatrixNew = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate('/matrices')}>
               <Icon name="ArrowLeft" size={20} />
             </Button>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">Создание новой матрицы</h1>
               <p className="text-sm text-muted-foreground">
-                {step === 'select' ? 'Выберите шаблон или создайте пустую матрицу' : 'Укажите название матрицы'}
+                {currentStep === 'template' && 'Шаг 1: Выберите шаблон'}
+                {currentStep === 'params' && 'Шаг 2: Настройте параметры'}
+                {currentStep === 'preview' && 'Шаг 3: Проверьте и создайте'}
               </p>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8 max-w-6xl">
+      <div className="container mx-auto px-6 py-6 max-w-6xl">
+        <Tabs value={currentStep} className="mb-8">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+            <TabsTrigger 
+              value="template" 
+              disabled={currentStep !== 'template'}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Icon name="Layout" size={16} className="mr-2" />
+              Шаблон
+            </TabsTrigger>
+            <TabsTrigger 
+              value="params" 
+              disabled={!canGoToParams || currentStep === 'template'}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Icon name="Settings" size={16} className="mr-2" />
+              Параметры
+            </TabsTrigger>
+            <TabsTrigger 
+              value="preview" 
+              disabled={!canGoToPreview || currentStep !== 'preview'}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Icon name="Eye" size={16} className="mr-2" />
+              Предпросмотр
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {error && (
-          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3 max-w-4xl mx-auto">
             <Icon name="AlertTriangle" size={20} className="text-destructive flex-shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
-        {step === 'select' && (
-          <div className="space-y-6">
+        {currentStep === 'template' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
             <h2 className="text-xl font-semibold">Готовые шаблоны матриц</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -168,12 +219,12 @@ const MatrixNew = () => {
                   <Card
                     key={template.id}
                     className="p-6 cursor-pointer hover:border-primary/50 transition-all"
-                    onClick={() => handleTemplateSelect(template.id)}
+                    onClick={() => handleTemplateSelect(template)}
                   >
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Icon 
-                          name={templateIcons[template.name as keyof typeof templateIcons] || 'Layers'} 
+                          name={templateIcons[template.name] || 'Layers'} 
                           size={24} 
                           className="text-primary" 
                         />
@@ -217,15 +268,15 @@ const MatrixNew = () => {
           </div>
         )}
 
-        {step === 'name' && (
-          <div className="max-w-2xl mx-auto space-y-6">
+        {currentStep === 'params' && (
+          <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-6">Параметры матрицы</h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Название матрицы
+                    Название матрицы <span className="text-destructive">*</span>
                   </label>
                   <input
                     type="text"
@@ -252,73 +303,139 @@ const MatrixNew = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      Ось X
+                      Название оси X
                     </label>
                     <input
                       type="text"
                       value={axisXName}
                       onChange={(e) => setAxisXName(e.target.value)}
-                      placeholder="Например: Стратегическое влияние"
+                      placeholder="Ось X"
                       className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      Ось Y
+                      Название оси Y
                     </label>
                     <input
                       type="text"
                       value={axisYName}
                       onChange={(e) => setAxisYName(e.target.value)}
-                      placeholder="Например: Зрелость потребности"
+                      placeholder="Ось Y"
                       className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
+              </div>
+            </Card>
 
-                {selectedTemplate !== null && (
-                  <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <Icon name="Info" size={20} className="text-accent flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-accent">
-                          Матрица будет создана на основе шаблона{' '}
-                          <strong>{templates.find(t => t.id === selectedTemplate)?.name}</strong>
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep('template')}
+              >
+                <Icon name="ArrowLeft" size={16} className="mr-2" />
+                Назад
+              </Button>
+              <Button 
+                onClick={handleNextToPreview}
+                className="gradient-primary"
+              >
+                Далее
+                <Icon name="ArrowRight" size={16} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'preview' && (
+          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-6">Предпросмотр матрицы</h2>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Название</h3>
+                  <p className="text-lg font-semibold">{matrixName}</p>
+                </div>
+
+                {matrixDescription && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Описание</h3>
+                    <p className="text-sm">{matrixDescription}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Ось X</h3>
+                    <p className="font-medium">{axisXName}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Ось Y</h3>
+                    <p className="font-medium">{axisYName}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Шаблон</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon 
+                        name={selectedTemplate ? templateIcons[selectedTemplate.name] || 'Layers' : 'Plus'} 
+                        size={20} 
+                        className="text-primary" 
+                      />
+                    </div>
+                    <p className="font-medium">
+                      {selectedTemplate ? selectedTemplate.name : 'Пустая матрица (без шаблона)'}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedTemplate && selectedTemplate.criteria && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                      Критерии из шаблона ({selectedTemplate.criteria.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {selectedTemplate.criteria
+                        .filter(c => c.axis === 'x')
+                        .slice(0, 3)
+                        .map((criterion, idx) => (
+                          <div key={idx} className="text-sm flex items-center gap-2">
+                            <Icon name="ChevronRight" size={14} className="text-muted-foreground" />
+                            <span>{criterion.name}</span>
+                          </div>
+                        ))}
+                      {selectedTemplate.criteria.filter(c => c.axis === 'x').length > 3 && (
+                        <p className="text-xs text-muted-foreground pl-5">
+                          и ещё {selectedTemplate.criteria.filter(c => c.axis === 'x').length - 3} критериев...
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Вы сможете изменить критерии и веса после создания
-                        </p>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
             </Card>
 
-            <div className="flex items-center justify-between gap-4">
-              <Button variant="outline" onClick={() => setStep('select')}>
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep('params')}
+                disabled={loading}
+              >
                 <Icon name="ArrowLeft" size={16} className="mr-2" />
                 Назад
               </Button>
-              
-              <Button
-                className="gradient-primary"
-                size="lg"
+              <Button 
                 onClick={createMatrix}
-                disabled={loading || !matrixName}
+                disabled={loading}
+                className="gradient-primary"
               >
-                {loading ? (
-                  <>
-                    <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                    Создание...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Check" size={20} className="mr-2" />
-                    Создать матрицу
-                  </>
-                )}
+                {loading ? 'Создание...' : 'Создать матрицу'}
+                <Icon name="Check" size={16} className="ml-2" />
               </Button>
             </div>
           </div>
