@@ -278,7 +278,7 @@ const Clients = () => {
                 <p className="text-muted-foreground mb-4">
                   Создайте матрицу приоритизации для управления клиентами
                 </p>
-                <Link to="/matrices/new">
+                <Link to="/matrix/new">
                   <Button className="gradient-primary">
                     <Icon name="Plus" size={20} className="mr-2" />
                     Создать матрицу
