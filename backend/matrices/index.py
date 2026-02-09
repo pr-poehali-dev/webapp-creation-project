@@ -112,6 +112,9 @@ def handler(event: dict, context) -> dict:
             }
     
     except Exception as e:
+        import traceback
+        print(f"ERROR: {str(e)}")
+        print(traceback.format_exc())
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
