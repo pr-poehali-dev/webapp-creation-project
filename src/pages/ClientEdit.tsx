@@ -6,6 +6,7 @@ import ClientEditHeader from '@/components/client/ClientEditHeader';
 import ClientPositionCard from '@/components/client/ClientPositionCard';
 import ClientBasicInfoForm from '@/components/client/ClientBasicInfoForm';
 import ClientMatrixScoring from '@/components/client/ClientMatrixScoring';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Matrix {
   id: number;
@@ -281,17 +282,19 @@ const ClientEdit = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Icon name="Loader2" size={48} className="animate-spin text-primary" />
-      </div>
+      <AppLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Icon name="Loader2" size={48} className="animate-spin text-primary" />
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppLayout>
       <ClientEditHeader client={client} onDelete={handleDelete} />
 
-      <div className="container mx-auto px-6 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
         {error && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-destructive flex-shrink-0 mt-0.5" />
@@ -391,7 +394,7 @@ const ClientEdit = () => {
           </div>
         </form>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

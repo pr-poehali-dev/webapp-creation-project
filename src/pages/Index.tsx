@@ -8,12 +8,12 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-border z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-              <Icon name="Zap" size={24} className="text-white" />
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg gradient-primary flex items-center justify-center">
+              <Icon name="Zap" size={20} className="text-white sm:w-6 sm:h-6" />
             </div>
-            <span className="text-xl font-bold">TechSale CRM</span>
+            <span className="text-base sm:text-xl font-bold">TechSale CRM</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#product" className="text-sm hover:text-primary transition-colors">О продукте</a>
@@ -21,42 +21,46 @@ const Index = () => {
             <a href="#solution" className="text-sm hover:text-primary transition-colors">Решение</a>
             <a href="#author" className="text-sm hover:text-primary transition-colors">Автор</a>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link to="/login">
-              <Button variant="ghost" size="sm">Войти</Button>
+              <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Войти</Button>
             </Link>
             <Link to="/signup">
-              <Button className="gradient-primary" size="sm">Попробовать бесплатно</Button>
+              <Button className="gradient-primary" size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
+                <span className="hidden sm:inline">Попробовать бесплатно</span>
+                <span className="sm:hidden">Начать</span>
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="pt-32 pb-20 gradient-hero">
-        <div className="container mx-auto px-6">
+      <section className="pt-20 sm:pt-28 md:pt-32 pb-12 sm:pb-16 md:pb-20 gradient-hero">
+        <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-primary/10 text-primary border-primary/20">
+            <Badge className="mb-4 sm:mb-6 bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm">
               Революция в управлении сложными продажами
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
               Не CRM,<br />а система <span className="text-primary">управления сложными сделками</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
               Адаптивная матрица приоритизации для менеджеров, работающих со сложными технологическими продуктами и проектными продажами
             </p>
-            <div className="flex items-center justify-center gap-4 flex-wrap">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap px-4">
               <Link to="/signup">
-                <Button size="lg" className="gradient-primary text-lg px-8 h-14">
-                  <Icon name="Rocket" size={20} className="mr-2" />
+                <Button size="lg" className="gradient-primary text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 h-11 sm:h-12 md:h-14">
+                  <Icon name="Rocket" size={18} className="mr-2" />
                   Начать бесплатно
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="text-lg px-8 h-14">
-                <Icon name="Play" size={20} className="mr-2" />
-                Посмотреть демо
+              <Button size="lg" variant="outline" className="text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 h-11 sm:h-12 md:h-14">
+                <Icon name="Play" size={18} className="mr-2" />
+                <span className="hidden sm:inline">Посмотреть демо</span>
+                <span className="sm:hidden">Демо</span>
               </Button>
             </div>
-            <div className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Icon name="Check" size={16} className="text-accent" />
                 <span>Работает оффлайн</span>
@@ -74,17 +78,17 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="product" className="py-20 bg-card">
-        <div className="container mx-auto px-6">
+      <section id="product" className="py-12 sm:py-16 md:py-20 bg-card">
+        <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">О продукте</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Система созданная для сложных продаж</h2>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <Badge className="mb-3 sm:mb-4 bg-secondary/10 text-secondary border-secondary/20 text-xs sm:text-sm">О продукте</Badge>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 px-4">Система созданная для сложных продаж</h2>
               <p className="text-xl text-muted-foreground">TechSale CRM — это облачный web-app, заточенный фокусно под задачу технологических и проектных продаж. 
 Система адаптирована под desktop и мобильные устройства с возможностью заполнения информации без интернета</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               <Card className="p-6 hover:shadow-xl transition-all hover:scale-105 border-border">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Icon name="Monitor" size={24} className="text-primary" />
@@ -113,17 +117,17 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="problem" className="py-20">
-        <div className="container mx-auto px-6">
+      <section id="problem" className="py-12 sm:py-16 md:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-16">
-              <Badge className="mb-4 bg-destructive/10 text-destructive border-destructive/20">Проблема рынка</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Классические CRM не работают<br />для сложных продаж</h2>
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <Badge className="mb-3 sm:mb-4 bg-destructive/10 text-destructive border-destructive/20 text-xs sm:text-sm">Проблема рынка</Badge>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 px-4">Классические CRM не работают<br className="hidden sm:block" /><span className="sm:hidden"> </span>для сложных продаж</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Сегодня на рынке представлено множество CRM систем, адаптированных под «классическую» воронку продаж. 
 Но практика показала, что при работе со сложными технологическими продуктами эта система не работает.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               <Card className="p-6 border-destructive/20 bg-destructive/5">
                 <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center mb-4">
                   <Icon name="AlertTriangle" size={24} className="text-destructive" />
@@ -259,7 +263,7 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               <Card className="p-6 border-primary/30">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Icon name="Smartphone" size={24} className="text-primary" />

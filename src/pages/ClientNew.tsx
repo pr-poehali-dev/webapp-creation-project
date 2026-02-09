@@ -7,6 +7,7 @@ import ClientWizardStep2 from '@/components/client/wizard/ClientWizardStep2';
 import ClientWizardStep3 from '@/components/client/wizard/ClientWizardStep3';
 import ClientWizardStep4 from '@/components/client/wizard/ClientWizardStep4';
 import QuestionnaireFlow from '@/components/client/wizard/QuestionnaireFlow';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Matrix {
   id: number;
