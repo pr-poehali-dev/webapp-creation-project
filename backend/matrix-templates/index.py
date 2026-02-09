@@ -51,7 +51,8 @@ def handler(event: dict, context) -> dict:
             matrix_description = body.get('matrix_description', '')
             axis_x_name = body.get('axis_x_name', 'Ось X')
             axis_y_name = body.get('axis_y_name', 'Ось Y')
-            result = create_matrix_from_template(conn, template_id, matrix_name, matrix_description, organization_id, user_id, axis_x_name, axis_y_name)
+            quadrant_rules = body.get('quadrant_rules')
+            result = create_matrix_from_template(conn, template_id, matrix_name, matrix_description, organization_id, user_id, axis_x_name, axis_y_name, quadrant_rules)
         elif action == 'create_custom':
             if not user_id:
                 conn.close()
@@ -60,7 +61,8 @@ def handler(event: dict, context) -> dict:
             matrix_description = body.get('matrix_description', '')
             axis_x_name = body.get('axis_x_name', 'Ось X')
             axis_y_name = body.get('axis_y_name', 'Ось Y')
-            result = create_custom_matrix(conn, matrix_name, matrix_description, organization_id, user_id, axis_x_name, axis_y_name)
+            quadrant_rules = body.get('quadrant_rules')
+            result = create_custom_matrix(conn, matrix_name, matrix_description, organization_id, user_id, axis_x_name, axis_y_name, quadrant_rules)
         elif action == 'add_criterion':
             if not user_id:
                 conn.close()
@@ -168,7 +170,7 @@ def get_template_details(conn, template_id: int, organization_id: int):
         return {'template': template_dict}
 
 
-def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = None, axis_y_name: str = None):
+def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = None, axis_y_name: str = None, quadrant_rules: list = None):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
             SELECT axis_x_name, axis_y_name FROM matrices WHERE id = %s AND is_template = TRUE
@@ -232,20 +234,27 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
                 VALUES (%s, %s, %s, %s)
             ''', (new_criterion_id, status['label'], int(status['weight']), status['sort_order']))
         
-        cur.execute('''
-            INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
-            VALUES 
-                (%s, 'focus', 7.0, 7.0, 'AND', 1),
-                (%s, 'grow', 7.0, 0.0, 'AND', 2),
-                (%s, 'monitor', 0.0, 7.0, 'AND', 3),
-                (%s, 'archive', 0.0, 0.0, 'AND', 4)
-        ''', (matrix_id, matrix_id, matrix_id, matrix_id))
+        if quadrant_rules:
+            for rule in quadrant_rules:
+                cur.execute('''
+                    INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (matrix_id, rule['quadrant'], rule['x_min'], rule['y_min'], rule['x_operator'], rule['priority']))
+        else:
+            cur.execute('''
+                INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+                VALUES 
+                    (%s, 'focus', 7.0, 7.0, 'AND', 1),
+                    (%s, 'grow', 7.0, 0.0, 'AND', 2),
+                    (%s, 'monitor', 0.0, 7.0, 'AND', 3),
+                    (%s, 'archive', 0.0, 0.0, 'AND', 4)
+            ''', (matrix_id, matrix_id, matrix_id, matrix_id))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Матрица создана из шаблона'}
 
 
-def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = 'Ось X', axis_y_name: str = 'Ось Y'):
+def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = 'Ось X', axis_y_name: str = 'Ось Y', quadrant_rules: list = None):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
             INSERT INTO matrices (organization_id, name, description, created_by, axis_x_name, axis_y_name, is_template)
@@ -254,14 +263,21 @@ def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organi
         ''', (organization_id, matrix_name, matrix_description, user_id, axis_x_name, axis_y_name))
         matrix_id = cur.fetchone()['id']
         
-        cur.execute('''
-            INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
-            VALUES 
-                (%s, 'focus', 7.0, 7.0, 'AND', 1),
-                (%s, 'grow', 7.0, 0.0, 'AND', 2),
-                (%s, 'monitor', 0.0, 7.0, 'AND', 3),
-                (%s, 'archive', 0.0, 0.0, 'AND', 4)
-        ''', (matrix_id, matrix_id, matrix_id, matrix_id))
+        if quadrant_rules:
+            for rule in quadrant_rules:
+                cur.execute('''
+                    INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (matrix_id, rule['quadrant'], rule['x_min'], rule['y_min'], rule['x_operator'], rule['priority']))
+        else:
+            cur.execute('''
+                INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+                VALUES 
+                    (%s, 'focus', 7.0, 7.0, 'AND', 1),
+                    (%s, 'grow', 7.0, 0.0, 'AND', 2),
+                    (%s, 'monitor', 0.0, 7.0, 'AND', 3),
+                    (%s, 'archive', 0.0, 0.0, 'AND', 4)
+            ''', (matrix_id, matrix_id, matrix_id, matrix_id))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Пустая матрица создана'}

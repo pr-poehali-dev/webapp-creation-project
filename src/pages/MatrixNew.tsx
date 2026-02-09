@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import QuadrantRulesEditor, { QuadrantRule } from '@/components/matrix/QuadrantRulesEditor';
 
 interface Template {
   id: number;
@@ -28,16 +29,24 @@ interface Criterion {
 
 const TEMPLATES_URL = 'https://functions.poehali.dev/76b771f4-a3b6-4259-be9c-4fda0848867a';
 
+const DEFAULT_RULES: QuadrantRule[] = [
+  { quadrant: 'focus', x_min: 7.0, y_min: 7.0, x_operator: 'AND', priority: 1 },
+  { quadrant: 'monitor', x_min: 0.0, y_min: 7.0, x_operator: 'AND', priority: 2 },
+  { quadrant: 'grow', x_min: 7.0, y_min: 0.0, x_operator: 'AND', priority: 3 },
+  { quadrant: 'archive', x_min: 0.0, y_min: 0.0, x_operator: 'AND', priority: 4 }
+];
+
 const MatrixNew = () => {
   const navigate = useNavigate();
   
-  const [currentStep, setCurrentStep] = useState<'template' | 'params' | 'preview'>('template');
+  const [currentStep, setCurrentStep] = useState<'template' | 'params' | 'rules' | 'preview'>('template');
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [matrixName, setMatrixName] = useState('');
   const [matrixDescription, setMatrixDescription] = useState('');
   const [axisXName, setAxisXName] = useState('');
   const [axisYName, setAxisYName] = useState('');
+  const [quadrantRules, setQuadrantRules] = useState<QuadrantRule[]>(DEFAULT_RULES);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -96,11 +105,16 @@ const MatrixNew = () => {
     setCurrentStep('params');
   };
 
-  const handleNextToPreview = () => {
+  const handleNextToRules = () => {
     if (!matrixName) {
       setError('Введите название матрицы');
       return;
     }
+    setError('');
+    setCurrentStep('rules');
+  };
+
+  const handleNextToPreview = () => {
     setError('');
     setCurrentStep('preview');
   };
@@ -124,7 +138,8 @@ const MatrixNew = () => {
           matrix_name: matrixName,
           matrix_description: matrixDescription,
           axis_x_name: axisXName,
-          axis_y_name: axisYName
+          axis_y_name: axisYName,
+          quadrant_rules: quadrantRules
         })
       });
 
@@ -149,7 +164,8 @@ const MatrixNew = () => {
   };
 
   const canGoToParams = selectedTemplate !== null || selectedTemplate === null;
-  const canGoToPreview = matrixName.trim() !== '';
+  const canGoToRules = matrixName.trim() !== '';
+  const canGoToPreview = canGoToRules;
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,7 +180,8 @@ const MatrixNew = () => {
               <p className="text-sm text-muted-foreground">
                 {currentStep === 'template' && 'Шаг 1: Выберите шаблон'}
                 {currentStep === 'params' && 'Шаг 2: Настройте параметры'}
-                {currentStep === 'preview' && 'Шаг 3: Проверьте и создайте'}
+                {currentStep === 'rules' && 'Шаг 3: Правила квадрантов'}
+                {currentStep === 'preview' && 'Шаг 4: Проверьте и создайте'}
               </p>
             </div>
           </div>
@@ -173,7 +190,7 @@ const MatrixNew = () => {
 
       <div className="container mx-auto px-6 py-6 max-w-6xl">
         <Tabs value={currentStep} className="mb-8">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+          <TabsList className="grid w-full max-w-4xl mx-auto grid-cols-4">
             <TabsTrigger 
               value="template" 
               disabled={currentStep !== 'template'}
@@ -189,6 +206,14 @@ const MatrixNew = () => {
             >
               <Icon name="Settings" size={16} className="mr-2" />
               Параметры
+            </TabsTrigger>
+            <TabsTrigger 
+              value="rules" 
+              disabled={!canGoToRules || (currentStep !== 'rules' && currentStep !== 'preview')}
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Icon name="Grid" size={16} className="mr-2" />
+              Квадранты
             </TabsTrigger>
             <TabsTrigger 
               value="preview" 
@@ -339,6 +364,33 @@ const MatrixNew = () => {
                 Назад
               </Button>
               <Button 
+                onClick={handleNextToRules}
+                className="gradient-primary"
+              >
+                Далее
+                <Icon name="ArrowRight" size={16} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'rules' && (
+          <div className="space-y-6 animate-in fade-in duration-300 max-w-4xl mx-auto">
+            <QuadrantRulesEditor 
+              rules={quadrantRules}
+              onChange={setQuadrantRules}
+              maxScore={10}
+            />
+
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep('params')}
+              >
+                <Icon name="ArrowLeft" size={16} className="mr-2" />
+                Назад
+              </Button>
+              <Button 
                 onClick={handleNextToPreview}
                 className="gradient-primary"
               >
@@ -417,13 +469,40 @@ const MatrixNew = () => {
                     </div>
                   </div>
                 )}
+
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Правила квадрантов</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {quadrantRules.filter(r => r.quadrant !== 'archive').map((rule) => {
+                      const labels: Record<string, string> = {
+                        focus: 'Фокус',
+                        monitor: 'Мониторить',
+                        grow: 'Выращивать'
+                      };
+                      return (
+                        <div key={rule.quadrant} className="text-sm p-3 bg-muted/50 rounded-lg">
+                          <div className="font-medium mb-1">{labels[rule.quadrant]}</div>
+                          <div className="text-xs text-muted-foreground">
+                            X ≥ {rule.x_min} {rule.x_operator === 'AND' ? 'и' : 'или'} Y ≥ {rule.y_min}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="text-sm p-3 bg-muted/50 rounded-lg col-span-2">
+                      <div className="font-medium mb-1">Архив</div>
+                      <div className="text-xs text-muted-foreground">
+                        Все остальные клиенты
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
 
             <div className="flex items-center justify-between">
               <Button 
                 variant="outline" 
-                onClick={() => setCurrentStep('params')}
+                onClick={() => setCurrentStep('rules')}
                 disabled={loading}
               >
                 <Icon name="ArrowLeft" size={16} className="mr-2" />
