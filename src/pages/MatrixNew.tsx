@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import QuadrantRulesEditor, { QuadrantRule } from '@/components/matrix/QuadrantRulesEditor';
+import { QuadrantRule } from '@/components/matrix/QuadrantRulesEditor';
+import TemplateSelectionStep from '@/components/matrix/TemplateSelectionStep';
+import MatrixParamsStep from '@/components/matrix/MatrixParamsStep';
+import QuadrantRulesStep from '@/components/matrix/QuadrantRulesStep';
+import MatrixPreviewStep from '@/components/matrix/MatrixPreviewStep';
 
 interface Template {
   id: number;
@@ -156,13 +159,6 @@ const MatrixNew = () => {
     }
   };
 
-  const templateIcons: Record<string, string> = {
-    'Продажи ИИ-продуктов': 'Brain',
-    'Сложное техническое оборудование': 'Cog',
-    'Корпоративное ПО': 'Code',
-    'Консалтинг': 'Briefcase'
-  };
-
   const canGoToParams = selectedTemplate !== null || selectedTemplate === null;
   const canGoToRules = matrixName.trim() !== '';
   const canGoToPreview = canGoToRules;
@@ -234,290 +230,48 @@ const MatrixNew = () => {
         )}
 
         {currentStep === 'template' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <h2 className="text-xl font-semibold">Готовые шаблоны матриц</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {templates
-                .filter(t => t.is_system)
-                .map((template) => (
-                  <Card
-                    key={template.id}
-                    className="p-6 cursor-pointer hover:border-primary/50 transition-all"
-                    onClick={() => handleTemplateSelect(template)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Icon 
-                          name={templateIcons[template.name] || 'Layers'} 
-                          size={24} 
-                          className="text-primary" 
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-2">{template.name}</h3>
-                        <p className="text-sm text-muted-foreground">{template.description}</p>
-                      </div>
-                      <Icon name="ChevronRight" size={20} className="text-muted-foreground" />
-                    </div>
-                  </Card>
-                ))}
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Или</span>
-              </div>
-            </div>
-
-            <Card
-              className="p-6 cursor-pointer hover:border-primary/50 transition-all border-2 border-dashed"
-              onClick={() => handleTemplateSelect(null)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                  <Icon name="Plus" size={24} className="text-secondary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1">Создать пустую матрицу</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Начните с нуля и добавьте свои критерии вручную
-                  </p>
-                </div>
-                <Icon name="ChevronRight" size={20} className="text-muted-foreground" />
-              </div>
-            </Card>
-          </div>
+          <TemplateSelectionStep 
+            templates={templates}
+            onSelectTemplate={handleTemplateSelect}
+          />
         )}
 
         {currentStep === 'params' && (
-          <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6">Параметры матрицы</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Название матрицы <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={matrixName}
-                    onChange={(e) => setMatrixName(e.target.value)}
-                    placeholder="Например: B2B продажи Q1 2024"
-                    className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Описание (опционально)
-                  </label>
-                  <textarea
-                    value={matrixDescription}
-                    onChange={(e) => setMatrixDescription(e.target.value)}
-                    placeholder="Краткое описание цели использования матрицы"
-                    rows={3}
-                    className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Название оси X
-                    </label>
-                    <input
-                      type="text"
-                      value={axisXName}
-                      onChange={(e) => setAxisXName(e.target.value)}
-                      placeholder="Ось X"
-                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Название оси Y
-                    </label>
-                    <input
-                      type="text"
-                      value={axisYName}
-                      onChange={(e) => setAxisYName(e.target.value)}
-                      placeholder="Ось Y"
-                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <div className="flex items-center justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentStep('template')}
-              >
-                <Icon name="ArrowLeft" size={16} className="mr-2" />
-                Назад
-              </Button>
-              <Button 
-                onClick={handleNextToRules}
-                className="gradient-primary"
-              >
-                Далее
-                <Icon name="ArrowRight" size={16} className="ml-2" />
-              </Button>
-            </div>
-          </div>
+          <MatrixParamsStep
+            matrixName={matrixName}
+            matrixDescription={matrixDescription}
+            axisXName={axisXName}
+            axisYName={axisYName}
+            onMatrixNameChange={setMatrixName}
+            onMatrixDescriptionChange={setMatrixDescription}
+            onAxisXNameChange={setAxisXName}
+            onAxisYNameChange={setAxisYName}
+            onBack={() => setCurrentStep('template')}
+            onNext={handleNextToRules}
+          />
         )}
 
         {currentStep === 'rules' && (
-          <div className="space-y-6 animate-in fade-in duration-300 max-w-4xl mx-auto">
-            <QuadrantRulesEditor 
-              rules={quadrantRules}
-              onChange={setQuadrantRules}
-              maxScore={10}
-            />
-
-            <div className="flex items-center justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentStep('params')}
-              >
-                <Icon name="ArrowLeft" size={16} className="mr-2" />
-                Назад
-              </Button>
-              <Button 
-                onClick={handleNextToPreview}
-                className="gradient-primary"
-              >
-                Далее
-                <Icon name="ArrowRight" size={16} className="ml-2" />
-              </Button>
-            </div>
-          </div>
+          <QuadrantRulesStep
+            quadrantRules={quadrantRules}
+            onQuadrantRulesChange={setQuadrantRules}
+            onBack={() => setCurrentStep('params')}
+            onNext={handleNextToPreview}
+          />
         )}
 
         {currentStep === 'preview' && (
-          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6">Предпросмотр матрицы</h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Название</h3>
-                  <p className="text-lg font-semibold">{matrixName}</p>
-                </div>
-
-                {matrixDescription && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Описание</h3>
-                    <p className="text-sm">{matrixDescription}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Ось X</h3>
-                    <p className="font-medium">{axisXName}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Ось Y</h3>
-                    <p className="font-medium">{axisYName}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Шаблон</h3>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon 
-                        name={selectedTemplate ? templateIcons[selectedTemplate.name] || 'Layers' : 'Plus'} 
-                        size={20} 
-                        className="text-primary" 
-                      />
-                    </div>
-                    <p className="font-medium">
-                      {selectedTemplate ? selectedTemplate.name : 'Пустая матрица (без шаблона)'}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedTemplate && selectedTemplate.criteria && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                      Критерии из шаблона ({selectedTemplate.criteria.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedTemplate.criteria
-                        .filter(c => c.axis === 'x')
-                        .slice(0, 3)
-                        .map((criterion, idx) => (
-                          <div key={idx} className="text-sm flex items-center gap-2">
-                            <Icon name="ChevronRight" size={14} className="text-muted-foreground" />
-                            <span>{criterion.name}</span>
-                          </div>
-                        ))}
-                      {selectedTemplate.criteria.filter(c => c.axis === 'x').length > 3 && (
-                        <p className="text-xs text-muted-foreground pl-5">
-                          и ещё {selectedTemplate.criteria.filter(c => c.axis === 'x').length - 3} критериев...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Правила квадрантов</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {quadrantRules.filter(r => r.quadrant !== 'archive').map((rule) => {
-                      const labels: Record<string, string> = {
-                        focus: 'Фокус',
-                        monitor: 'Мониторить',
-                        grow: 'Выращивать'
-                      };
-                      return (
-                        <div key={rule.quadrant} className="text-sm p-3 bg-muted/50 rounded-lg">
-                          <div className="font-medium mb-1">{labels[rule.quadrant]}</div>
-                          <div className="text-xs text-muted-foreground">
-                            X ≥ {rule.x_min} {rule.x_operator === 'AND' ? 'и' : 'или'} Y ≥ {rule.y_min}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div className="text-sm p-3 bg-muted/50 rounded-lg col-span-2">
-                      <div className="font-medium mb-1">Архив</div>
-                      <div className="text-xs text-muted-foreground">
-                        Все остальные клиенты
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <div className="flex items-center justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentStep('rules')}
-                disabled={loading}
-              >
-                <Icon name="ArrowLeft" size={16} className="mr-2" />
-                Назад
-              </Button>
-              <Button 
-                onClick={createMatrix}
-                disabled={loading}
-                className="gradient-primary"
-              >
-                {loading ? 'Создание...' : 'Создать матрицу'}
-                <Icon name="Check" size={16} className="ml-2" />
-              </Button>
-            </div>
-          </div>
+          <MatrixPreviewStep
+            matrixName={matrixName}
+            matrixDescription={matrixDescription}
+            axisXName={axisXName}
+            axisYName={axisYName}
+            selectedTemplate={selectedTemplate}
+            quadrantRules={quadrantRules}
+            loading={loading}
+            onBack={() => setCurrentStep('rules')}
+            onCreate={createMatrix}
+          />
         )}
       </div>
     </div>
