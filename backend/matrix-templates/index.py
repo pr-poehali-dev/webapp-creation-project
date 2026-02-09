@@ -211,23 +211,19 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
             criterion_id_mapping[criterion['id']] = new_criterion_id
         
         cur.execute('''
-            SELECT template_criterion_id, label, weight, sort_order
+            SELECT DISTINCT template_criterion_id, label, weight, sort_order
             FROM template_criterion_statuses
             WHERE template_criterion_id IN %s
+            ORDER BY template_criterion_id, sort_order
         ''', (tuple(criterion_id_mapping.keys()),))
         template_statuses = cur.fetchall()
         
         for status in template_statuses:
             new_criterion_id = criterion_id_mapping[status['template_criterion_id']]
-            try:
-                cur.execute('''
-                    INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order)
-                    VALUES (%s, %s, %s, %s)
-                ''', (new_criterion_id, status['label'], int(status['weight']), status['sort_order']))
-            except Exception as e:
-                print(f'ERROR inserting status: criterion_id={new_criterion_id}, label={status["label"]}, weight={int(status["weight"])}, sort_order={status["sort_order"]}')
-                print(f'Exception: {e}')
-                raise
+            cur.execute('''
+                INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order)
+                VALUES (%s, %s, %s, %s)
+            ''', (new_criterion_id, status['label'], int(status['weight']), status['sort_order']))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Матрица создана из шаблона'}

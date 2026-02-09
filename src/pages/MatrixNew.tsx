@@ -9,6 +9,8 @@ interface Template {
   name: string;
   description: string;
   is_system: boolean;
+  axis_x_name?: string;
+  axis_y_name?: string;
 }
 
 const TEMPLATES_URL = 'https://functions.poehali.dev/76b771f4-a3b6-4259-be9c-4fda0848867a';
@@ -47,8 +49,37 @@ const MatrixNew = () => {
     }
   };
 
-  const handleTemplateSelect = (templateId: number | null) => {
+  const handleTemplateSelect = async (templateId: number | null) => {
     setSelectedTemplate(templateId);
+    
+    if (templateId !== null) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(TEMPLATES_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action: 'get_template',
+            template_id: templateId
+          })
+        });
+        
+        const data = await response.json();
+        if (response.ok && data.template) {
+          setAxisXName(data.template.axis_x_name || '');
+          setAxisYName(data.template.axis_y_name || '');
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки шаблона:', error);
+      }
+    } else {
+      setAxisXName('');
+      setAxisYName('');
+    }
+    
     setStep('name');
   };
 
