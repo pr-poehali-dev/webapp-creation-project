@@ -94,15 +94,17 @@ const ClientWizardStep2 = ({
           </Button>
 
           <div className="flex gap-3">
+            {hasAnyData && (
+              <Button
+                onClick={onSkip}
+                variant="ghost"
+                size="lg"
+              >
+                Пропустить
+              </Button>
+            )}
             <Button
-              onClick={onSkip}
-              variant="ghost"
-              size="lg"
-            >
-              Пропустить
-            </Button>
-            <Button
-              onClick={onNext}
+              onClick={hasAnyData ? onNext : onSkip}
               className="gradient-primary"
               size="lg"
             >

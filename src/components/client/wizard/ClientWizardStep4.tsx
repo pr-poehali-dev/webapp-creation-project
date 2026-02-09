@@ -3,12 +3,14 @@ import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 
 interface ClientWizardStep4Props {
+  loading?: boolean;
   onStartQuestionnaire: () => void;
   onSkipQuestionnaire: () => void;
   onBack: () => void;
 }
 
 const ClientWizardStep4 = ({ 
+  loading = false,
   onStartQuestionnaire, 
   onSkipQuestionnaire, 
   onBack 
@@ -27,12 +29,16 @@ const ClientWizardStep4 = ({
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <Card
-          className="p-8 cursor-pointer transition-all hover:shadow-xl hover:scale-105 border-2 border-primary/50 bg-primary/5"
+          className={`p-8 cursor-pointer transition-all hover:shadow-xl hover:scale-105 border-2 border-primary/50 bg-primary/5 ${loading ? 'opacity-50 pointer-events-none' : ''}`}
           onClick={onStartQuestionnaire}
         >
           <div className="text-center">
             <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
-              <Icon name="CheckCircle2" size={32} className="text-primary-foreground" />
+              {loading ? (
+                <Icon name="Loader2" size={32} className="text-primary-foreground animate-spin" />
+              ) : (
+                <Icon name="CheckCircle2" size={32} className="text-primary-foreground" />
+              )}
             </div>
             <h3 className="text-2xl font-bold mb-2">Да!</h3>
             <p className="text-muted-foreground">
@@ -42,12 +48,16 @@ const ClientWizardStep4 = ({
         </Card>
 
         <Card
-          className="p-8 cursor-pointer transition-all hover:shadow-xl hover:scale-105 border-2 border-border"
+          className={`p-8 cursor-pointer transition-all hover:shadow-xl hover:scale-105 border-2 border-border ${loading ? 'opacity-50 pointer-events-none' : ''}`}
           onClick={onSkipQuestionnaire}
         >
           <div className="text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <Icon name="Clock" size={32} className="text-muted-foreground" />
+              {loading ? (
+                <Icon name="Loader2" size={32} className="text-muted-foreground animate-spin" />
+              ) : (
+                <Icon name="Clock" size={32} className="text-muted-foreground" />
+              )}
             </div>
             <h3 className="text-2xl font-bold mb-2">Заполню позже</h3>
             <p className="text-muted-foreground">

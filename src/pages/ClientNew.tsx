@@ -98,6 +98,8 @@ const ClientNew = () => {
   };
 
   const fetchMatrixCriteria = async (matrixId: string) => {
+    setLoading(true);
+    setError('');
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
@@ -110,11 +112,16 @@ const ClientNew = () => {
       });
 
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.matrix && data.matrix.criteria) {
         setCriteria(data.matrix.criteria);
+      } else {
+        throw new Error(data.error || 'Не удалось загрузить критерии матрицы');
       }
     } catch (error) {
       console.error('Ошибка загрузки критериев:', error);
+      setError(error instanceof Error ? error.message : 'Ошибка загрузки критериев');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,7 +130,7 @@ const ClientNew = () => {
   };
 
   const handleStep2Next = () => {
-    if (matrices.length > 1) {
+    if (matrices.length >= 2) {
       setCurrentStep(3);
     } else {
       if (matrices.length === 1 && !wizardData.matrix_id) {
@@ -135,7 +142,7 @@ const ClientNew = () => {
 
   const handleStep2Skip = () => {
     setWizardData(prev => ({ ...prev, contact_person: '', email: '', phone: '' }));
-    if (matrices.length > 1) {
+    if (matrices.length >= 2) {
       setCurrentStep(3);
     } else {
       setCurrentStep(4);
@@ -170,21 +177,34 @@ const ClientNew = () => {
       const token = localStorage.getItem('token');
       const matrixId = wizardData.matrix_id || matrices[0]?.id.toString();
       
+      const payload: {
+        action: string;
+        company_name: string;
+        contact_person: string | null;
+        email: string | null;
+        phone: string | null;
+        matrix_id: number | null;
+        scores?: Score[];
+      } = {
+        action: 'create',
+        company_name: wizardData.company_name,
+        contact_person: wizardData.contact_person || null,
+        email: wizardData.email || null,
+        phone: wizardData.phone || null,
+        matrix_id: matrixId ? parseInt(matrixId) : null,
+      };
+
+      if (clientScores.length > 0) {
+        payload.scores = clientScores;
+      }
+
       const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          action: 'create',
-          company_name: wizardData.company_name,
-          contact_person: wizardData.contact_person || null,
-          email: wizardData.email || null,
-          phone: wizardData.phone || null,
-          matrix_id: matrixId ? parseInt(matrixId) : null,
-          scores: clientScores,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -203,7 +223,7 @@ const ClientNew = () => {
   };
 
   const getTotalSteps = () => {
-    return matrices.length > 1 ? 4 : 3;
+    return matrices.length >= 2 ? 4 : 3;
   };
 
   const getCurrentStepNumber = () => {
@@ -280,7 +300,7 @@ const ClientNew = () => {
           />
         )}
 
-        {currentStep === 3 && matrices.length > 1 && (
+        {currentStep === 3 && matrices.length >= 2 && (
           <ClientWizardStep3
             matrices={matrices}
             selectedMatrixId={wizardData.matrix_id}
@@ -292,9 +312,10 @@ const ClientNew = () => {
 
         {currentStep === 4 && (
           <ClientWizardStep4
+            loading={loading}
             onStartQuestionnaire={handleStartQuestionnaire}
             onSkipQuestionnaire={handleSkipQuestionnaire}
-            onBack={() => setCurrentStep(matrices.length > 1 ? 3 : 2)}
+            onBack={() => setCurrentStep(matrices.length >= 2 ? 3 : 2)}
           />
         )}
 
