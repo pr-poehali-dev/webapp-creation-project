@@ -4,6 +4,14 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 
+interface CriterionStatus {
+  id: number;
+  criterion_id: number;
+  label: string;
+  weight: number;
+  sort_order: number;
+}
+
 interface Criterion {
   id: number;
   name: string;
@@ -12,6 +20,7 @@ interface Criterion {
   weight: number;
   min_value: number;
   max_value: number;
+  statuses: CriterionStatus[];
 }
 
 interface Score {
@@ -37,16 +46,19 @@ const QuestionnaireFlow = ({
   const [scores, setScores] = useState<Score[]>(
     initialScores.length > 0 
       ? initialScores 
-      : criteria.map(c => ({ criterion_id: c.id, score: c.min_value, comment: '' }))
+      : criteria.map(c => ({ criterion_id: c.id, score: 0, comment: '' }))
   );
+  const [selectedStatuses, setSelectedStatuses] = useState<Map<number, number>>(new Map());
 
   const currentCriterion = criteria[currentIndex];
   const currentScore = scores.find(s => s.criterion_id === currentCriterion.id);
   const progress = ((currentIndex + 1) / criteria.length) * 100;
+  const sortedStatuses = [...(currentCriterion.statuses || [])].sort((a, b) => a.sort_order - b.sort_order);
 
-  const handleScoreChange = (value: number) => {
+  const handleStatusSelect = (statusId: number, weight: number) => {
+    setSelectedStatuses(prev => new Map(prev).set(currentCriterion.id, statusId));
     setScores(scores.map(s => 
-      s.criterion_id === currentCriterion.id ? { ...s, score: value } : s
+      s.criterion_id === currentCriterion.id ? { ...s, score: weight } : s
     ));
   };
 
@@ -114,33 +126,41 @@ const QuestionnaireFlow = ({
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-6xl font-bold text-primary mb-2">
-                {currentScore?.score.toFixed(1)}
-              </div>
-              <p className="text-sm text-muted-foreground">Текущая оценка</p>
+          {sortedStatuses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sortedStatuses.map((status) => {
+                const isSelected = selectedStatuses.get(currentCriterion.id) === status.id;
+                return (
+                  <Card
+                    key={status.id}
+                    onClick={() => handleStatusSelect(status.id, status.weight)}
+                    className={`p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                      isSelected 
+                        ? 'border-primary border-2 bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xl font-semibold">{status.label}</h4>
+                      {isSelected && (
+                        <Icon name="CheckCircle2" size={24} className="text-primary" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-lg px-3 py-1">
+                        {status.weight} {status.weight === 1 ? 'балл' : status.weight < 5 ? 'балла' : 'баллов'}
+                      </Badge>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
-
-          <div className="space-y-3">
-            <input
-              type="range"
-              min={currentCriterion.min_value}
-              max={currentCriterion.max_value}
-              step="0.1"
-              value={currentScore?.score || currentCriterion.min_value}
-              onChange={(e) => handleScoreChange(parseFloat(e.target.value))}
-              className="w-full h-3 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-              style={{
-                background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${((currentScore?.score || currentCriterion.min_value) - currentCriterion.min_value) / (currentCriterion.max_value - currentCriterion.min_value) * 100}%, hsl(var(--muted)) ${((currentScore?.score || currentCriterion.min_value) - currentCriterion.min_value) / (currentCriterion.max_value - currentCriterion.min_value) * 100}%, hsl(var(--muted)) 100%)`
-              }}
-            />
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{currentCriterion.min_value}</span>
-              <span>{currentCriterion.max_value}</span>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Icon name="AlertCircle" size={48} className="mx-auto mb-4 opacity-50" />
+              <p>Для этого критерия не настроены статусы</p>
             </div>
-          </div>
+          )}
         </div>
       </Card>
 
@@ -158,6 +178,7 @@ const QuestionnaireFlow = ({
           onClick={handleNext}
           className="gradient-primary"
           size="lg"
+          disabled={sortedStatuses.length > 0 && !selectedStatuses.has(currentCriterion.id)}
         >
           {currentIndex === criteria.length - 1 ? (
             <>
