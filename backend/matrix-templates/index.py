@@ -141,7 +141,7 @@ def list_templates(conn, organization_id: int):
 def get_template_details(conn, template_id: int, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, description, is_system
+            SELECT id, name, description, is_system, axis_x_name, axis_y_name
             FROM matrix_templates
             WHERE id = %s AND (is_system = TRUE OR organization_id = %s)
         ''', (template_id, organization_id))
@@ -164,8 +164,18 @@ def get_template_details(conn, template_id: int, organization_id: int):
         return {'template': template_dict}
 
 
-def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = 'Ось X', axis_y_name: str = 'Ось Y'):
+def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = None, axis_y_name: str = None):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute('''
+            SELECT axis_x_name, axis_y_name FROM matrix_templates WHERE id = %s
+        ''', (template_id,))
+        template = cur.fetchone()
+        
+        if not axis_x_name:
+            axis_x_name = template['axis_x_name'] if template else 'Ось X'
+        if not axis_y_name:
+            axis_y_name = template['axis_y_name'] if template else 'Ось Y'
+        
         cur.execute('''
             INSERT INTO matrices (organization_id, name, description, template_id, created_by, axis_x_name, axis_y_name)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
