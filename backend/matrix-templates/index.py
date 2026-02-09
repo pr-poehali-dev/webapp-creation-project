@@ -49,14 +49,18 @@ def handler(event: dict, context) -> dict:
             template_id = body.get('template_id')
             matrix_name = body.get('matrix_name')
             matrix_description = body.get('matrix_description', '')
-            result = create_matrix_from_template(conn, template_id, matrix_name, matrix_description, organization_id, user_id)
+            axis_x_name = body.get('axis_x_name', 'Ось X')
+            axis_y_name = body.get('axis_y_name', 'Ось Y')
+            result = create_matrix_from_template(conn, template_id, matrix_name, matrix_description, organization_id, user_id, axis_x_name, axis_y_name)
         elif action == 'create_custom':
             if not user_id:
                 conn.close()
                 return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Требуется авторизация'}), 'isBase64Encoded': False}
             matrix_name = body.get('matrix_name')
             matrix_description = body.get('matrix_description', '')
-            result = create_custom_matrix(conn, matrix_name, matrix_description, organization_id, user_id)
+            axis_x_name = body.get('axis_x_name', 'Ось X')
+            axis_y_name = body.get('axis_y_name', 'Ось Y')
+            result = create_custom_matrix(conn, matrix_name, matrix_description, organization_id, user_id, axis_x_name, axis_y_name)
         elif action == 'add_criterion':
             if not user_id:
                 conn.close()
@@ -160,13 +164,13 @@ def get_template_details(conn, template_id: int, organization_id: int):
         return {'template': template_dict}
 
 
-def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int):
+def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = 'Ось X', axis_y_name: str = 'Ось Y'):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            INSERT INTO matrices (organization_id, name, description, template_id, created_by)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO matrices (organization_id, name, description, template_id, created_by, axis_x_name, axis_y_name)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        ''', (organization_id, matrix_name, matrix_description, template_id, user_id))
+        ''', (organization_id, matrix_name, matrix_description, template_id, user_id, axis_x_name, axis_y_name))
         matrix_id = cur.fetchone()['id']
         
         cur.execute('''
@@ -195,13 +199,13 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
         return {'matrix_id': matrix_id, 'message': 'Матрица создана из шаблона'}
 
 
-def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organization_id: int, user_id: int):
+def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = 'Ось X', axis_y_name: str = 'Ось Y'):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            INSERT INTO matrices (organization_id, name, description, created_by)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO matrices (organization_id, name, description, created_by, axis_x_name, axis_y_name)
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id
-        ''', (organization_id, matrix_name, matrix_description, user_id))
+        ''', (organization_id, matrix_name, matrix_description, user_id, axis_x_name, axis_y_name))
         matrix_id = cur.fetchone()['id']
         
         conn.commit()

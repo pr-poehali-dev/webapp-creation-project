@@ -67,29 +67,31 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="relative" style={{ width: MATRIX_SIZE + 120, height: MATRIX_SIZE + 120 }}>
+      <div className="relative" style={{ width: MATRIX_SIZE + 80, height: MATRIX_SIZE + 80 }}>
         <div 
-          className="absolute left-1/2 -translate-x-1/2 -top-12 flex flex-col items-center"
+          className="absolute left-1/2 -translate-x-1/2 -top-6 flex flex-col items-center gap-1"
         >
-          <Icon name="ArrowUp" size={24} className="text-primary mb-2" />
-          <span className="text-sm font-semibold text-foreground">
+          <Icon name="ArrowUp" size={20} className="text-primary" />
+          <span className="text-xs font-semibold text-foreground">
             {matrixData?.axis_y_name || 'Ось Y'}
           </span>
         </div>
 
         <div 
-          className="absolute -left-16 top-1/2 -translate-y-1/2 flex flex-col items-center"
-          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          className="absolute -left-6 top-1/2 -translate-y-1/2 flex items-center gap-1"
         >
-          <span className="text-sm font-semibold text-foreground mb-2">
+          <Icon name="ArrowLeft" size={20} className="text-primary" />
+          <span 
+            className="text-xs font-semibold text-foreground"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
             {matrixData?.axis_x_name || 'Ось X'}
           </span>
-          <Icon name="ArrowRight" size={24} className="text-primary" style={{ transform: 'rotate(90deg)' }} />
         </div>
 
         <div 
           className="grid grid-cols-2 grid-rows-2 gap-0 relative"
-          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '60px auto' }}
+          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '40px' }}
         >
           {quadrants.map(({ key, position }) => {
             const config = getQuadrantConfig(key);
@@ -134,11 +136,6 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
             style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
           ></div>
         </div>
-
-        <div className="absolute -left-8 -bottom-2 text-xs text-muted-foreground font-semibold">0</div>
-        <div className="absolute -left-8 top-14 text-xs text-muted-foreground font-semibold">10</div>
-        <div className="absolute left-14 -bottom-8 text-xs text-muted-foreground font-semibold">0</div>
-        <div className="absolute right-14 -bottom-8 text-xs text-muted-foreground font-semibold">10</div>
       </div>
     </div>
   );

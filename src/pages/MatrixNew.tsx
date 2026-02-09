@@ -21,6 +21,8 @@ const MatrixNew = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [matrixName, setMatrixName] = useState('');
   const [matrixDescription, setMatrixDescription] = useState('');
+  const [axisXName, setAxisXName] = useState('');
+  const [axisYName, setAxisYName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -72,7 +74,9 @@ const MatrixNew = () => {
           action: selectedTemplate === null ? 'create_custom' : 'create_from_template',
           template_id: selectedTemplate,
           matrix_name: matrixName,
-          matrix_description: matrixDescription
+          matrix_description: matrixDescription,
+          axis_x_name: axisXName || 'Ось X',
+          axis_y_name: axisYName || 'Ось Y'
         })
       });
 
@@ -212,6 +216,34 @@ const MatrixNew = () => {
                     rows={3}
                     className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Ось X
+                    </label>
+                    <input
+                      type="text"
+                      value={axisXName}
+                      onChange={(e) => setAxisXName(e.target.value)}
+                      placeholder="Например: Стратегическое влияние"
+                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Ось Y
+                    </label>
+                    <input
+                      type="text"
+                      value={axisYName}
+                      onChange={(e) => setAxisYName(e.target.value)}
+                      placeholder="Например: Зрелость потребности"
+                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
                 </div>
 
                 {selectedTemplate !== null && (
