@@ -136,12 +136,12 @@ def handle_list(payload: dict) -> dict:
         cur.execute(
             """
             SELECT m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name,
-                   COUNT(DISTINCT mc.id) as criteria_count
+                   COUNT(DISTINCT mc.id) as criteria_count, m.axis_x_name, m.axis_y_name
             FROM matrices m
             LEFT JOIN users u ON m.created_by = u.id
             LEFT JOIN matrix_criteria mc ON m.id = mc.matrix_id
             WHERE m.organization_id = %s
-            GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name
+            GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name, m.axis_x_name, m.axis_y_name
             ORDER BY m.deleted_at IS NULL DESC, m.is_active DESC, m.created_at DESC
             """,
             (organization_id,)
@@ -157,7 +157,9 @@ def handle_list(payload: dict) -> dict:
                 'created_at': row[4].isoformat() if row[4] else None,
                 'deleted_at': row[5].isoformat() if row[5] else None,
                 'created_by_name': row[6],
-                'criteria_count': row[7]
+                'criteria_count': row[7],
+                'axis_x_name': row[8] or 'Ось X',
+                'axis_y_name': row[9] or 'Ось Y'
             })
         
         return {
