@@ -67,22 +67,28 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="relative" style={{ width: MATRIX_SIZE + 80, height: MATRIX_SIZE + 80 }}>
+      <div className="relative" style={{ width: MATRIX_SIZE + 120, height: MATRIX_SIZE + 120 }}>
         <div 
-          className="absolute left-1/2 -translate-x-1/2 -top-6 flex flex-col items-center gap-1"
+          className="absolute left-1/2 -translate-x-1/2 -top-12 flex flex-col items-center gap-2"
         >
-          <Icon name="ArrowUp" size={20} className="text-primary" />
-          <span className="text-xs font-semibold text-foreground">
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-1 h-8 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
+            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-primary"></div>
+          </div>
+          <span className="text-base font-bold text-foreground">
             {matrixData?.axis_y_name || 'Ось Y'}
           </span>
         </div>
 
         <div 
-          className="absolute -left-6 top-1/2 -translate-y-1/2 flex items-center gap-1"
+          className="absolute -left-12 top-1/2 -translate-y-1/2 flex items-center gap-2"
         >
-          <Icon name="ArrowLeft" size={20} className="text-primary" />
+          <div className="flex items-center gap-1">
+            <div className="h-1 w-8 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
+            <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[12px] border-r-primary"></div>
+          </div>
           <span 
-            className="text-xs font-semibold text-foreground"
+            className="text-base font-bold text-foreground"
             style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
           >
             {matrixData?.axis_x_name || 'Ось X'}
@@ -91,7 +97,7 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
 
         <div 
           className="grid grid-cols-2 grid-rows-2 gap-0 relative"
-          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '40px' }}
+          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '60px' }}
         >
           {quadrants.map(({ key, position }) => {
             const config = getQuadrantConfig(key);

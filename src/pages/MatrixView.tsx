@@ -310,17 +310,23 @@ const MatrixView = () => {
               </div>
             </div>
 
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 -mb-8">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Icon name="TrendingUp" size={16} className="text-primary" />
-                <span>{matrix?.axis_x_name || 'Ось X'}</span>
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 -mb-10">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[10px] border-t-primary"></div>
+                  <div className="w-1 h-6 bg-gradient-to-b from-primary to-primary/40 rounded-full"></div>
+                </div>
+                <span className="text-base font-bold text-foreground">{matrix?.axis_x_name || 'Ось X'}</span>
               </div>
             </div>
 
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-12 -rotate-90">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Icon name="Target" size={16} className="text-secondary" />
-                <span>{matrix?.axis_y_name || 'Ось Y'}</span>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-14 -rotate-90">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[10px] border-t-primary"></div>
+                  <div className="w-1 h-6 bg-gradient-to-b from-primary to-primary/40 rounded-full"></div>
+                </div>
+                <span className="text-base font-bold text-foreground">{matrix?.axis_y_name || 'Ось Y'}</span>
               </div>
             </div>
           </div>
