@@ -361,17 +361,20 @@ def handler(event: dict, context) -> dict:
                 }
             
             cur.execute("""
-                SELECT id FROM clients 
+                SELECT id, matrix_id FROM clients 
                 WHERE id = %s AND organization_id = %s AND is_active = true
             """, (client_id, organization_id))
             
-            if not cur.fetchone():
+            client_row = cur.fetchone()
+            if not client_row:
                 return {
                     'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'Клиент не найден'}),
                     'isBase64Encoded': False
                 }
+            
+            matrix_id = client_row[1]
             
             for score_item in scores:
                 criterion_id = score_item.get('criterion_id')
@@ -386,7 +389,7 @@ def handler(event: dict, context) -> dict:
                 """, (client_id, criterion_id, score, comment, score, comment))
             
             score_x, score_y = calculate_scores(cur, client_id)
-            quadrant = determine_quadrant(score_x, score_y)
+            quadrant = determine_quadrant(cur, matrix_id, score_x, score_y)
             
             cur.execute("""
                 UPDATE clients 
@@ -531,15 +534,27 @@ def calculate_scores(cur, client_id: int) -> tuple:
     return round(score_x, 2), round(score_y, 2)
 
 
-def determine_quadrant(score_x: float, score_y: float) -> str:
-    """Определяет квадрант на основе оценок по осям (порог 70% = 7.0 из 10)"""
-    threshold = 7.0
+def determine_quadrant(cur, matrix_id: int, score_x: float, score_y: float) -> str:
+    """Определяет квадрант на основе правил матрицы (гибкая логика)"""
+    cur.execute("""
+        SELECT quadrant, x_min, y_min, x_operator
+        FROM matrix_quadrant_rules
+        WHERE matrix_id = %s
+        ORDER BY priority ASC
+    """, (matrix_id,))
     
-    if score_x >= threshold and score_y >= threshold:
-        return 'focus'
-    elif score_x >= threshold and score_y < threshold:
-        return 'grow'
-    elif score_x < threshold and score_y >= threshold:
-        return 'monitor'
-    else:
-        return 'archive'
+    rules = cur.fetchall()
+    
+    for rule in rules:
+        quadrant, x_min, y_min, x_operator = rule
+        x_min = float(x_min)
+        y_min = float(y_min)
+        
+        if x_operator == 'AND':
+            if score_x >= x_min and score_y >= y_min:
+                return quadrant
+        else:  # OR
+            if score_x >= x_min or score_y >= y_min:
+                return quadrant
+    
+    return 'archive'  # fallback на случай если правил нет

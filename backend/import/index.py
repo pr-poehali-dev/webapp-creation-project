@@ -377,7 +377,7 @@ def import_clients(organization_id: int, user_id: int, body: dict) -> dict:
                     """.format(client_id=client_id, criterion_id=criterion_id, score=score_value))
             
             score_x, score_y = calculate_scores(cur, client_id)
-            quadrant = determine_quadrant(score_x, score_y)
+            quadrant = determine_quadrant(cur, matrix_id, score_x, score_y)
             
             cur.execute("""
                 UPDATE clients
@@ -434,17 +434,30 @@ def calculate_scores(cur, client_id: int) -> tuple:
     
     return round(score_x, 2), round(score_y, 2)
 
-def determine_quadrant(score_x: float, score_y: float) -> str:
-    """Определение квадранта по scores"""
-    threshold = 5.0
-    if score_x >= threshold and score_y >= threshold:
-        return 'focus'
-    elif score_x >= threshold and score_y < threshold:
-        return 'grow'
-    elif score_x < threshold and score_y >= threshold:
-        return 'monitor'
-    else:
-        return 'archive'
+def determine_quadrant(cur, matrix_id: int, score_x: float, score_y: float) -> str:
+    """Определяет квадрант на основе правил матрицы (гибкая логика)"""
+    cur.execute("""
+        SELECT quadrant, x_min, y_min, x_operator
+        FROM matrix_quadrant_rules
+        WHERE matrix_id = {matrix_id}
+        ORDER BY priority ASC
+    """.format(matrix_id=matrix_id))
+    
+    rules = cur.fetchall()
+    
+    for rule in rules:
+        quadrant, x_min, y_min, x_operator = rule
+        x_min = float(x_min)
+        y_min = float(y_min)
+        
+        if x_operator == 'AND':
+            if score_x >= x_min and score_y >= y_min:
+                return quadrant
+        else:  # OR
+            if score_x >= x_min or score_y >= y_min:
+                return quadrant
+    
+    return 'archive'  # fallback
 
 def save_template(organization_id: int, user_id: int, body: dict) -> dict:
     """Сохранение шаблона маппинга для повторного использования"""
