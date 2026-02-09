@@ -61,7 +61,6 @@ def handler(event: dict, context) -> dict:
         if action == 'list':
             quadrant_filter = body.get('quadrant')
             matrix_filter = body.get('matrix_id')
-            
             deal_status_filter = body.get('deal_status_id')
             
             query = """
@@ -73,18 +72,22 @@ def handler(event: dict, context) -> dict:
                 LEFT JOIN matrices m ON c.matrix_id = m.id
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
                 WHERE c.organization_id = %s AND c.is_active = true
-            """ % organization_id
+            """
+            params = [organization_id]
             
             if quadrant_filter:
-                query += " AND c.quadrant = '%s'" % quadrant_filter
+                query += " AND c.quadrant = %s"
+                params.append(quadrant_filter)
             if matrix_filter:
-                query += " AND c.matrix_id = %s" % matrix_filter
+                query += " AND c.matrix_id = %s"
+                params.append(matrix_filter)
             if deal_status_filter:
-                query += " AND c.deal_status_id = %s" % deal_status_filter
+                query += " AND c.deal_status_id = %s"
+                params.append(deal_status_filter)
             
             query += " ORDER BY c.created_at DESC"
             
-            cur.execute(query)
+            cur.execute(query, tuple(params))
             rows = cur.fetchall()
             
             clients = []
@@ -132,7 +135,7 @@ def handler(event: dict, context) -> dict:
                 LEFT JOIN matrices m ON c.matrix_id = m.id
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
                 WHERE c.id = %s AND c.organization_id = %s AND c.is_active = true
-            """ % (client_id, organization_id))
+            """, (client_id, organization_id))
             
             row = cur.fetchone()
             if not row:
@@ -150,7 +153,7 @@ def handler(event: dict, context) -> dict:
                 JOIN matrix_criteria mc ON cs.criterion_id = mc.id
                 WHERE cs.client_id = %s
                 ORDER BY mc.axis, mc.sort_order
-            """ % client_id)
+            """, (client_id,))
             
             score_rows = cur.fetchall()
             scores = []
@@ -210,18 +213,18 @@ def handler(event: dict, context) -> dict:
             cur.execute("""
                 INSERT INTO clients (organization_id, matrix_id, company_name, contact_person, 
                                      email, phone, description, notes, deal_status_id, created_by)
-                VALUES (%s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """ % (
+            """, (
                 organization_id,
-                matrix_id if matrix_id else 'NULL',
-                company_name.replace("'", "''"),
-                body.get('contact_person', '').replace("'", "''"),
-                body.get('email', '').replace("'", "''"),
-                body.get('phone', '').replace("'", "''"),
-                body.get('description', '').replace("'", "''"),
-                body.get('notes', '').replace("'", "''"),
-                deal_status_id if deal_status_id else 'NULL',
+                matrix_id,
+                company_name,
+                body.get('contact_person'),
+                body.get('email'),
+                body.get('phone'),
+                body.get('description'),
+                body.get('notes'),
+                deal_status_id,
                 user_id
             ))
             
@@ -235,8 +238,8 @@ def handler(event: dict, context) -> dict:
                 
                 cur.execute("""
                     INSERT INTO client_scores (client_id, criterion_id, score, comment)
-                    VALUES (%s, %s, %s, '%s')
-                """ % (client_id, criterion_id, score, comment.replace("'", "''")))
+                    VALUES (%s, %s, %s, %s)
+                """, (client_id, criterion_id, score, comment))
             
             if matrix_id and scores:
                 score_x, score_y = calculate_scores(cur, client_id)
@@ -244,9 +247,9 @@ def handler(event: dict, context) -> dict:
                 
                 cur.execute("""
                     UPDATE clients 
-                    SET score_x = %s, score_y = %s, quadrant = '%s'
+                    SET score_x = %s, score_y = %s, quadrant = %s
                     WHERE id = %s
-                """ % (score_x, score_y, quadrant, client_id))
+                """, (score_x, score_y, quadrant, client_id))
             
             conn.commit()
             
@@ -280,31 +283,39 @@ def handler(event: dict, context) -> dict:
                     'isBase64Encoded': False
                 }
             
-            updates = []
+            update_fields = []
+            update_values = []
+            
             if 'company_name' in body:
-                updates.append("company_name = '%s'" % body['company_name'].replace("'", "''"))
+                update_fields.append("company_name = %s")
+                update_values.append(body['company_name'])
             if 'contact_person' in body:
-                updates.append("contact_person = '%s'" % body['contact_person'].replace("'", "''"))
+                update_fields.append("contact_person = %s")
+                update_values.append(body['contact_person'])
             if 'email' in body:
-                updates.append("email = '%s'" % body['email'].replace("'", "''"))
+                update_fields.append("email = %s")
+                update_values.append(body['email'])
             if 'phone' in body:
-                updates.append("phone = '%s'" % body['phone'].replace("'", "''"))
+                update_fields.append("phone = %s")
+                update_values.append(body['phone'])
             if 'description' in body:
-                updates.append("description = '%s'" % body['description'].replace("'", "''"))
+                update_fields.append("description = %s")
+                update_values.append(body['description'])
             if 'notes' in body:
-                updates.append("notes = '%s'" % body['notes'].replace("'", "''"))
+                update_fields.append("notes = %s")
+                update_values.append(body['notes'])
             if 'matrix_id' in body:
-                updates.append("matrix_id = %s" % body['matrix_id'])
+                update_fields.append("matrix_id = %s")
+                update_values.append(body['matrix_id'])
             if 'deal_status_id' in body:
-                deal_status_id = body['deal_status_id']
-                updates.append("deal_status_id = %s" % (deal_status_id if deal_status_id else 'NULL'))
+                update_fields.append("deal_status_id = %s")
+                update_values.append(body['deal_status_id'])
             
-            updates.append("updated_at = CURRENT_TIMESTAMP")
+            update_fields.append("updated_at = CURRENT_TIMESTAMP")
             
-            if updates:
-                cur.execute("""
-                    UPDATE clients SET %s WHERE id = %s
-                """ % (', '.join(updates), client_id))
+            if update_fields:
+                update_values.append(client_id)
+                cur.execute(f"UPDATE clients SET {', '.join(update_fields)} WHERE id = %s", tuple(update_values))
             
             if 'scores' in body:
                 for score_item in body['scores']:
@@ -314,19 +325,19 @@ def handler(event: dict, context) -> dict:
                     
                     cur.execute("""
                         INSERT INTO client_scores (client_id, criterion_id, score, comment)
-                        VALUES (%s, %s, %s, '%s')
+                        VALUES (%s, %s, %s, %s)
                         ON CONFLICT (client_id, criterion_id) 
-                        DO UPDATE SET score = %s, comment = '%s', updated_at = CURRENT_TIMESTAMP
-                    """ % (client_id, criterion_id, score, comment.replace("'", "''"), score, comment.replace("'", "''")))
+                        DO UPDATE SET score = %s, comment = %s, updated_at = CURRENT_TIMESTAMP
+                    """, (client_id, criterion_id, score, comment, score, comment))
                 
                 score_x, score_y = calculate_scores(cur, client_id)
                 quadrant = determine_quadrant(score_x, score_y)
                 
                 cur.execute("""
                     UPDATE clients 
-                    SET score_x = %s, score_y = %s, quadrant = '%s'
+                    SET score_x = %s, score_y = %s, quadrant = %s
                     WHERE id = %s
-                """ % (score_x, score_y, quadrant, client_id))
+                """, (score_x, score_y, quadrant, client_id))
             
             conn.commit()
             
@@ -352,7 +363,7 @@ def handler(event: dict, context) -> dict:
             cur.execute("""
                 SELECT id FROM clients 
                 WHERE id = %s AND organization_id = %s AND is_active = true
-            """ % (client_id, organization_id))
+            """, (client_id, organization_id))
             
             if not cur.fetchone():
                 return {
@@ -369,19 +380,19 @@ def handler(event: dict, context) -> dict:
                 
                 cur.execute("""
                     INSERT INTO client_scores (client_id, criterion_id, score, comment)
-                    VALUES (%s, %s, %s, '%s')
+                    VALUES (%s, %s, %s, %s)
                     ON CONFLICT (client_id, criterion_id) 
-                    DO UPDATE SET score = %s, comment = '%s', updated_at = CURRENT_TIMESTAMP
-                """ % (client_id, criterion_id, score, comment.replace("'", "''"), score, comment.replace("'", "''")))
+                    DO UPDATE SET score = %s, comment = %s, updated_at = CURRENT_TIMESTAMP
+                """, (client_id, criterion_id, score, comment, score, comment))
             
             score_x, score_y = calculate_scores(cur, client_id)
             quadrant = determine_quadrant(score_x, score_y)
             
             cur.execute("""
                 UPDATE clients 
-                SET score_x = %s, score_y = %s, quadrant = '%s', updated_at = CURRENT_TIMESTAMP
+                SET score_x = %s, score_y = %s, quadrant = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
-            """ % (score_x, score_y, quadrant, client_id))
+            """, (score_x, score_y, quadrant, client_id))
             
             conn.commit()
             
@@ -410,7 +421,7 @@ def handler(event: dict, context) -> dict:
             cur.execute("""
                 UPDATE clients SET is_active = false 
                 WHERE id = %s AND organization_id = %s
-            """ % (client_id, organization_id))
+            """, (client_id, organization_id))
             
             conn.commit()
             

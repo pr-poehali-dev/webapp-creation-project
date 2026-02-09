@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +61,14 @@ const QuestionnaireFlow = ({
       s.criterion_id === currentCriterion.id ? { ...s, score: weight } : s
     ));
   };
+
+  // Автоматически выбираем первый статус для текущего критерия
+  useEffect(() => {
+    if (sortedStatuses.length > 0 && !selectedStatuses.has(currentCriterion.id)) {
+      const firstStatus = sortedStatuses[0];
+      handleStatusSelect(firstStatus.id, firstStatus.weight);
+    }
+  }, [currentIndex, sortedStatuses]);
 
   const handleNext = () => {
     if (currentIndex < criteria.length - 1) {
