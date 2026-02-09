@@ -67,30 +67,42 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="relative" style={{ width: MATRIX_SIZE + 120, height: MATRIX_SIZE + 120 }}>
+      <div className="relative" style={{ width: MATRIX_SIZE + 120, height: MATRIX_SIZE + 140 }}>
         <div 
-          className="absolute left-1/2 -translate-x-1/2 -top-12 flex flex-col items-center gap-2"
+          className="absolute left-1/2 -translate-x-1/2 -top-16 flex flex-col items-center gap-3"
         >
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-1 h-8 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-primary"></div>
-          </div>
-          <span className="text-base font-bold text-foreground">
+          <span className="text-lg font-semibold text-foreground tracking-wide">
             {matrixData?.axis_y_name || 'Ось Y'}
+          </span>
+          <div className="flex flex-col items-center">
+            <div className="w-0.5 h-10 bg-gradient-to-b from-primary/60 to-primary"></div>
+            <Icon name="ChevronUp" size={24} className="text-primary -mt-1" />
+          </div>
+        </div>
+
+        <div 
+          className="absolute -left-16 top-1/2 -translate-y-1/2 flex items-center gap-3"
+        >
+          <div className="flex items-center">
+            <Icon name="ChevronLeft" size={24} className="text-primary -mr-1" />
+            <div className="h-0.5 w-10 bg-gradient-to-r from-primary to-primary/60"></div>
+          </div>
+          <span 
+            className="text-lg font-semibold text-foreground tracking-wide"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            {matrixData?.axis_x_name || 'Ось X'}
           </span>
         </div>
 
         <div 
-          className="absolute -left-12 top-1/2 -translate-y-1/2 flex items-center gap-2"
+          className="absolute left-1/2 -translate-x-1/2 -bottom-16 flex flex-col items-center gap-3"
         >
-          <div className="flex items-center gap-1">
-            <div className="h-1 w-8 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[12px] border-r-primary"></div>
+          <div className="flex flex-col items-center">
+            <Icon name="ChevronDown" size={24} className="text-primary -mb-1" />
+            <div className="w-0.5 h-10 bg-gradient-to-t from-primary/60 to-primary"></div>
           </div>
-          <span 
-            className="text-base font-bold text-foreground"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-          >
+          <span className="text-lg font-semibold text-foreground tracking-wide">
             {matrixData?.axis_x_name || 'Ось X'}
           </span>
         </div>
