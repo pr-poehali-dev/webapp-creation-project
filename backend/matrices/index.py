@@ -141,7 +141,7 @@ def handle_list(payload: dict) -> dict:
             LEFT JOIN users u ON m.created_by = u.id
             LEFT JOIN matrix_criteria mc ON m.id = mc.matrix_id
             WHERE m.organization_id = %s
-            GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name, m.axis_x_name, m.axis_y_name
+            GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.id, u.full_name, m.axis_x_name, m.axis_y_name
             ORDER BY m.deleted_at IS NULL DESC, m.is_active DESC, m.created_at DESC
             """,
             (organization_id,)
