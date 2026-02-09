@@ -67,80 +67,134 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="relative" style={{ width: MATRIX_SIZE + 120, height: MATRIX_SIZE + 120 }}>
-        <div 
-          className="absolute left-1/2 -translate-x-1/2 -top-12 flex flex-col items-center gap-2"
-        >
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-1 h-8 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-primary"></div>
-          </div>
-          <span className="text-base font-bold text-foreground">
-            {matrixData?.axis_y_name || 'Ось Y'}
-          </span>
-        </div>
-
-        <div 
-          className="absolute -left-12 top-1/2 -translate-y-1/2 flex items-center gap-2"
-        >
-          <div className="flex items-center gap-1">
-            <div className="h-1 w-8 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[12px] border-r-primary"></div>
-          </div>
-          <span 
-            className="text-base font-bold text-foreground"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-          >
-            {matrixData?.axis_x_name || 'Ось X'}
-          </span>
-        </div>
-
-        <div 
-          className="grid grid-cols-2 grid-rows-2 gap-0 relative"
-          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '60px' }}
-        >
-          {quadrants.map(({ key, position }) => {
-            const config = getQuadrantConfig(key);
-            const count = quadrantCounts[key as keyof typeof quadrantCounts];
+      <div className="relative bg-muted/20 rounded-xl p-12 border border-border/50">
+        <div className="relative" style={{ width: MATRIX_SIZE + 80, height: MATRIX_SIZE + 80 }}>
+          
+          {/* Вертикальная ось Y (слева) */}
+          <div className="absolute -left-16 top-0 bottom-0 flex flex-col items-center justify-between py-10">
+            <div className="flex flex-col items-center gap-2">
+              <Icon name="ChevronUp" size={28} className="text-primary" strokeWidth={3} />
+              <div className="w-0.5 h-12 bg-gradient-to-b from-primary via-primary/60 to-transparent rounded-full"></div>
+            </div>
             
-            return (
-              <button
-                key={key}
-                onClick={() => onQuadrantClick(key)}
-                className={`
-                  relative border-2 ${config.borderColor} ${config.color}
-                  transition-all duration-300 cursor-pointer
-                  flex flex-col items-center justify-center
-                  group
-                `}
-                style={{
-                  width: MATRIX_SIZE / 2,
-                  height: MATRIX_SIZE / 2,
-                }}
-              >
-                <div className="flex flex-col items-center gap-4">
-                  <div className={`${config.iconColor} transition-transform group-hover:scale-110`}>
-                    <Icon name={config.icon} size={48} />
-                  </div>
-                  <div className="text-6xl font-bold text-foreground group-hover:scale-125 transition-transform">
-                    {count}
-                  </div>
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    {config.label}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-semibold text-primary uppercase tracking-wide">Высокий</span>
+              <div className="w-6 h-px bg-primary/40"></div>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-6 h-px bg-border"></div>
+              <span className="text-xs text-muted-foreground">50%</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-6 h-px bg-primary/40"></div>
+              <span className="text-xs font-semibold text-primary uppercase tracking-wide">Низкий</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-0.5 h-12 bg-gradient-to-t from-primary via-primary/60 to-transparent rounded-full"></div>
+            </div>
+          </div>
 
+          {/* Название оси Y (снизу горизонтально) */}
+          <div className="absolute -bottom-16 left-0 right-0 flex justify-center">
+            <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-border/50">
+              <Icon name="ArrowUpDown" size={18} className="text-primary" />
+              <span className="text-sm font-bold text-foreground tracking-wide">
+                {matrixData?.axis_y_name || 'Ось Y'}
+              </span>
+            </div>
+          </div>
+
+          {/* Горизонтальная ось X (снизу) */}
+          <div className="absolute -bottom-8 left-10 right-10 flex items-center justify-between px-0">
+            <div className="flex items-center gap-2">
+              <div className="h-0.5 w-12 bg-gradient-to-l from-primary via-primary/60 to-transparent rounded-full"></div>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-semibold text-primary uppercase tracking-wide">Низкий</span>
+              <div className="h-6 w-px bg-primary/40"></div>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">50%</span>
+              <div className="h-6 w-px bg-border"></div>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <div className="h-6 w-px bg-primary/40"></div>
+              <span className="text-xs font-semibold text-primary uppercase tracking-wide">Высокий</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="h-0.5 w-12 bg-gradient-to-r from-primary via-primary/60 to-transparent rounded-full"></div>
+              <Icon name="ChevronRight" size={28} className="text-primary" strokeWidth={3} />
+            </div>
+          </div>
+
+          {/* Название оси X (справа вертикально) */}
+          <div className="absolute -right-16 top-1/2 -translate-y-1/2">
+            <div className="flex flex-col items-center gap-2 bg-background/80 backdrop-blur-sm px-2 py-4 rounded-lg border border-border/50">
+              <Icon name="ArrowLeftRight" size={18} className="text-primary" />
+              <span 
+                className="text-sm font-bold text-foreground tracking-wide"
+                style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+              >
+                {matrixData?.axis_x_name || 'Ось X'}
+              </span>
+            </div>
+          </div>
+
+          {/* Матрица квадрантов */}
           <div 
-            className="absolute left-1/2 top-0 bottom-0 w-1 bg-border -translate-x-1/2"
-            style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
-          ></div>
-          <div 
-            className="absolute top-1/2 left-0 right-0 h-1 bg-border -translate-y-1/2"
-            style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
-          ></div>
+            className="grid grid-cols-2 grid-rows-2 gap-0 relative rounded-lg overflow-hidden border-2 border-border/60"
+            style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '40px' }}
+          >
+            {quadrants.map(({ key, position }) => {
+              const config = getQuadrantConfig(key);
+              const count = quadrantCounts[key as keyof typeof quadrantCounts];
+              
+              return (
+                <button
+                  key={key}
+                  onClick={() => onQuadrantClick(key)}
+                  className={`
+                    relative border-2 ${config.borderColor} ${config.color}
+                    transition-all duration-300 cursor-pointer
+                    flex flex-col items-center justify-center
+                    group
+                  `}
+                  style={{
+                    width: MATRIX_SIZE / 2,
+                    height: MATRIX_SIZE / 2,
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-4">
+                    <div className={`${config.iconColor} transition-transform group-hover:scale-110`}>
+                      <Icon name={config.icon} size={48} />
+                    </div>
+                    <div className="text-6xl font-bold text-foreground group-hover:scale-125 transition-transform">
+                      {count}
+                    </div>
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {config.label}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            <div 
+              className="absolute left-1/2 top-0 bottom-0 w-1 bg-border -translate-x-1/2"
+              style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
+            ></div>
+            <div 
+              className="absolute top-1/2 left-0 right-0 h-1 bg-border -translate-y-1/2"
+              style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
+            ></div>
+          </div>
         </div>
       </div>
     </div>
