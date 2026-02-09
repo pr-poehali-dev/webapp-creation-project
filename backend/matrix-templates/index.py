@@ -129,10 +129,12 @@ def get_user_from_token(token: str):
 def list_templates(conn, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, description, is_system
-            FROM matrix_templates
-            WHERE is_system = TRUE OR organization_id = %s
-            ORDER BY is_system DESC, name
+            SELECT id, name, description, 
+                   CASE WHEN organization_id IS NULL THEN TRUE ELSE FALSE END as is_system
+            FROM matrices
+            WHERE is_template = TRUE 
+              AND (organization_id IS NULL OR organization_id = %s)
+            ORDER BY (organization_id IS NULL) DESC, name
         ''', (organization_id,))
         templates = cur.fetchall()
         return {'templates': [dict(t) for t in templates]}
@@ -141,9 +143,13 @@ def list_templates(conn, organization_id: int):
 def get_template_details(conn, template_id: int, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, description, is_system, axis_x_name, axis_y_name
-            FROM matrix_templates
-            WHERE id = %s AND (is_system = TRUE OR organization_id = %s)
+            SELECT id, name, description, 
+                   CASE WHEN organization_id IS NULL THEN TRUE ELSE FALSE END as is_system,
+                   axis_x_name, axis_y_name
+            FROM matrices
+            WHERE id = %s 
+              AND is_template = TRUE
+              AND (organization_id IS NULL OR organization_id = %s)
         ''', (template_id, organization_id))
         template = cur.fetchone()
         
@@ -151,9 +157,9 @@ def get_template_details(conn, template_id: int, organization_id: int):
             raise ValueError('Шаблон не найден')
         
         cur.execute('''
-            SELECT id, axis, name, weight, min_value, max_value, hint, sort_order
-            FROM template_criteria
-            WHERE template_id = %s
+            SELECT id, axis, name, weight, min_value, max_value, description as hint, sort_order
+            FROM matrix_criteria
+            WHERE matrix_id = %s
             ORDER BY axis, sort_order
         ''', (template_id,))
         criteria = cur.fetchall()
@@ -167,9 +173,12 @@ def get_template_details(conn, template_id: int, organization_id: int):
 def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = None, axis_y_name: str = None):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT axis_x_name, axis_y_name FROM matrix_templates WHERE id = %s
+            SELECT axis_x_name, axis_y_name FROM matrices WHERE id = %s AND is_template = TRUE
         ''', (template_id,))
         template = cur.fetchone()
+        
+        if not template:
+            raise ValueError('Шаблон не найден')
         
         if not axis_x_name:
             axis_x_name = template['axis_x_name'] if template else 'Ось X'
@@ -177,16 +186,16 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
             axis_y_name = template['axis_y_name'] if template else 'Ось Y'
         
         cur.execute('''
-            INSERT INTO matrices (organization_id, name, description, template_id, created_by, axis_x_name, axis_y_name)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO matrices (organization_id, name, description, template_id, created_by, axis_x_name, axis_y_name, is_template)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, FALSE)
             RETURNING id
         ''', (organization_id, matrix_name, matrix_description, template_id, user_id, axis_x_name, axis_y_name))
         matrix_id = cur.fetchone()['id']
         
         cur.execute('''
-            SELECT id, axis, name, weight, min_value, max_value, hint, sort_order
-            FROM template_criteria
-            WHERE template_id = %s
+            SELECT id, axis, name, weight, min_value, max_value, description as hint, sort_order
+            FROM matrix_criteria
+            WHERE matrix_id = %s
         ''', (template_id,))
         template_criteria = cur.fetchall()
         
@@ -211,19 +220,28 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
             criterion_id_mapping[criterion['id']] = new_criterion_id
         
         cur.execute('''
-            SELECT DISTINCT template_criterion_id, label, weight, sort_order
-            FROM template_criterion_statuses
-            WHERE template_criterion_id IN %s
-            ORDER BY template_criterion_id, sort_order
+            SELECT criterion_id, label, weight, sort_order
+            FROM criterion_statuses
+            WHERE criterion_id IN %s
+            ORDER BY criterion_id, sort_order
         ''', (tuple(criterion_id_mapping.keys()),))
         template_statuses = cur.fetchall()
         
         for status in template_statuses:
-            new_criterion_id = criterion_id_mapping[status['template_criterion_id']]
+            new_criterion_id = criterion_id_mapping[status['criterion_id']]
             cur.execute('''
                 INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order)
                 VALUES (%s, %s, %s, %s)
             ''', (new_criterion_id, status['label'], int(status['weight']), status['sort_order']))
+        
+        cur.execute('''
+            INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+            VALUES 
+                (%s, 'focus', 7.0, 7.0, 'AND', 1),
+                (%s, 'grow', 7.0, 0.0, 'AND', 2),
+                (%s, 'monitor', 0.0, 7.0, 'AND', 3),
+                (%s, 'archive', 0.0, 0.0, 'AND', 4)
+        ''', (matrix_id, matrix_id, matrix_id, matrix_id))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Матрица создана из шаблона'}
@@ -232,11 +250,20 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
 def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organization_id: int, user_id: int, axis_x_name: str = 'Ось X', axis_y_name: str = 'Ось Y'):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            INSERT INTO matrices (organization_id, name, description, created_by, axis_x_name, axis_y_name)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO matrices (organization_id, name, description, created_by, axis_x_name, axis_y_name, is_template)
+            VALUES (%s, %s, %s, %s, %s, %s, FALSE)
             RETURNING id
         ''', (organization_id, matrix_name, matrix_description, user_id, axis_x_name, axis_y_name))
         matrix_id = cur.fetchone()['id']
+        
+        cur.execute('''
+            INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+            VALUES 
+                (%s, 'focus', 7.0, 7.0, 'AND', 1),
+                (%s, 'grow', 7.0, 0.0, 'AND', 2),
+                (%s, 'monitor', 0.0, 7.0, 'AND', 3),
+                (%s, 'archive', 0.0, 0.0, 'AND', 4)
+        ''', (matrix_id, matrix_id, matrix_id, matrix_id))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Пустая матрица создана'}
@@ -245,7 +272,7 @@ def create_custom_matrix(conn, matrix_name: str, matrix_description: str, organi
 def add_criterion_to_matrix(conn, matrix_id: int, axis: str, name: str, weight: float, min_value: float, max_value: float, hint: str, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id FROM matrices WHERE id = %s AND organization_id = %s
+            SELECT id FROM matrices WHERE id = %s AND organization_id = %s AND is_template = FALSE
         ''', (matrix_id, organization_id))
         if not cur.fetchone():
             raise ValueError('Матрица не найдена')
@@ -274,7 +301,7 @@ def update_criterion(conn, criterion_id: int, updates: dict, organization_id: in
             SELECT mc.id
             FROM matrix_criteria mc
             JOIN matrices m ON mc.matrix_id = m.id
-            WHERE mc.id = %s AND m.organization_id = %s
+            WHERE mc.id = %s AND m.organization_id = %s AND m.is_template = FALSE
         ''', (criterion_id, organization_id))
         if not cur.fetchone():
             raise ValueError('Критерий не найден')
@@ -297,7 +324,7 @@ def remove_criterion(conn, criterion_id: int, organization_id: int):
             SELECT mc.id
             FROM matrix_criteria mc
             JOIN matrices m ON mc.matrix_id = m.id
-            WHERE mc.id = %s AND m.organization_id = %s
+            WHERE mc.id = %s AND m.organization_id = %s AND m.is_template = FALSE
         ''', (criterion_id, organization_id))
         if not cur.fetchone():
             raise ValueError('Критерий не найден')
