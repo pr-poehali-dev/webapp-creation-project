@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface User {
   id: number;
@@ -26,6 +26,18 @@ interface Stats {
   total_clients: number;
   total_matrices: number;
   focus_clients: number;
+}
+
+interface NavTile {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  iconColor: string;
+  gradient: string;
+  route: string;
+  count?: number;
+  permission?: (p: UserPermissions) => boolean;
 }
 
 const Dashboard = () => {
@@ -129,204 +141,142 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
-  };
-
-  if (!user) {
+  if (!user || !permissions) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Icon name="Loader2" size={48} className="text-primary animate-spin" />
-      </div>
+      <AppLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Icon name="Loader2" size={48} className="text-primary animate-spin" />
+        </div>
+      </AppLayout>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                <Icon name="Zap" size={24} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold">TechSale CRM</h1>
-                <p className="text-xs text-muted-foreground">{user.organization_name}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium">{user.full_name}</p>
-                <p className="text-xs text-muted-foreground">{user.role}</p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <Icon name="LogOut" size={16} className="mr-2" />
-                Выйти
-              </Button>
-            </div>
-          </div>
-          
-          <nav className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary"
-              onClick={() => navigate('/dashboard')}
-            >
-              <Icon name="LayoutDashboard" size={16} className="mr-2" />
-              Дашборд
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/clients')}
-            >
-              <Icon name="Building2" size={16} className="mr-2" />
-              Клиенты
-            </Button>
-            {permissions?.matrix_access !== 'none' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/matrices')}
-              >
-                <Icon name="Grid3x3" size={16} className="mr-2" />
-                Матрицы
-              </Button>
-            )}
-            {permissions?.team_access !== 'none' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/team')}
-              >
-                <Icon name="Users" size={16} className="mr-2" />
-                Команда
-              </Button>
-            )}
-            {permissions?.import_export !== 'none' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/export')}
-              >
-                <Icon name="Download" size={16} className="mr-2" />
-                Экспорт
-              </Button>
-            )}
-            {permissions?.import_export === 'both' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/import')}
-              >
-                <Icon name="Upload" size={16} className="mr-2" />
-                Импорт
-              </Button>
-            )}
-            {permissions?.settings_access && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/settings')}
-              >
-                <Icon name="Settings" size={16} className="mr-2" />
-                Настройки
-              </Button>
-            )}
-          </nav>
-        </div>
-      </header>
+  const navTiles: NavTile[] = [
+    {
+      id: 'clients',
+      title: 'Клиенты',
+      description: 'Управление клиентской базой',
+      icon: 'Building2',
+      iconColor: 'text-blue-500',
+      gradient: 'from-blue-500/20 to-blue-600/30 hover:from-blue-500/30 hover:to-blue-600/40',
+      route: '/clients',
+      count: stats.total_clients,
+    },
+    {
+      id: 'matrices',
+      title: 'Матрицы',
+      description: 'Матрицы оценки клиентов',
+      icon: 'Grid3x3',
+      iconColor: 'text-purple-500',
+      gradient: 'from-purple-500/20 to-purple-600/30 hover:from-purple-500/30 hover:to-purple-600/40',
+      route: '/matrices',
+      count: stats.total_matrices,
+      permission: (p) => p.matrix_access !== 'none',
+    },
+    {
+      id: 'focus',
+      title: 'В Фокусе',
+      description: 'Приоритетные клиенты',
+      icon: 'Zap',
+      iconColor: 'text-green-500',
+      gradient: 'from-green-500/20 to-green-600/30 hover:from-green-500/30 hover:to-green-600/40',
+      route: '/clients?filter=focus',
+      count: stats.focus_clients,
+    },
+    {
+      id: 'team',
+      title: 'Команда',
+      description: 'Управление пользователями',
+      icon: 'Users',
+      iconColor: 'text-orange-500',
+      gradient: 'from-orange-500/20 to-orange-600/30 hover:from-orange-500/30 hover:to-orange-600/40',
+      route: '/team',
+      permission: (p) => p.team_access !== 'none',
+    },
+    {
+      id: 'export',
+      title: 'Экспорт',
+      description: 'Выгрузка данных',
+      icon: 'Download',
+      iconColor: 'text-cyan-500',
+      gradient: 'from-cyan-500/20 to-cyan-600/30 hover:from-cyan-500/30 hover:to-cyan-600/40',
+      route: '/export',
+      permission: (p) => p.import_export !== 'none',
+    },
+    {
+      id: 'import',
+      title: 'Импорт',
+      description: 'Загрузка данных',
+      icon: 'Upload',
+      iconColor: 'text-indigo-500',
+      gradient: 'from-indigo-500/20 to-indigo-600/30 hover:from-indigo-500/30 hover:to-indigo-600/40',
+      route: '/import',
+      permission: (p) => p.import_export === 'both',
+    },
+    {
+      id: 'settings',
+      title: 'Настройки',
+      description: 'Конфигурация системы',
+      icon: 'Settings',
+      iconColor: 'text-gray-500',
+      gradient: 'from-gray-500/20 to-gray-600/30 hover:from-gray-500/30 hover:to-gray-600/40',
+      route: '/settings',
+      permission: (p) => p.settings_access === true,
+    },
+  ];
 
-      <main className="container mx-auto px-6 py-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">Добро пожаловать, {user.full_name}!</h2>
-            <p className="text-muted-foreground">
-              Вы успешно вошли в систему TechSale CRM
+  const visibleTiles = navTiles.filter(tile => 
+    !tile.permission || tile.permission(permissions)
+  );
+
+  return (
+    <AppLayout>
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8 sm:mb-12 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
+              Добро пожаловать, {user.full_name}!
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Выберите раздел для работы
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card 
-              className="p-6 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent cursor-pointer hover:scale-105 transition-all"
-              onClick={() => navigate('/clients')}
-            >
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Icon name="Building2" size={24} className="text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Клиенты</h3>
-              <p className="text-3xl font-bold mb-1">{loading ? '...' : stats.total_clients}</p>
-              <p className="text-sm text-muted-foreground">
-                {stats.total_clients === 0 ? 'Добавьте первого клиента' : 'Всего клиентов'}
-              </p>
-            </Card>
-
-            <Card 
-              className="p-6 border-secondary/30 bg-gradient-to-br from-secondary/5 to-transparent cursor-pointer hover:scale-105 transition-all"
-              onClick={() => navigate('/matrices')}
-            >
-              <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                <Icon name="Grid3x3" size={24} className="text-secondary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Матрицы</h3>
-              <p className="text-3xl font-bold mb-1">{loading ? '...' : stats.total_matrices}</p>
-              <p className="text-sm text-muted-foreground">
-                {stats.total_matrices === 0 ? 'Создайте первую матрицу' : 'Всего матриц'}
-              </p>
-            </Card>
-
-            <Card className="p-6 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent">
-              <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                <Icon name="Target" size={24} className="text-accent" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">В фокусе</h3>
-              <p className="text-3xl font-bold mb-1">{loading ? '...' : stats.focus_clients}</p>
-              <p className="text-sm text-muted-foreground">
-                {stats.focus_clients === 0 ? 'Нет клиентов в фокусе' : 'Клиентов требует внимания'}
-              </p>
-            </Card>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            {visibleTiles.map((tile) => (
+              <Card
+                key={tile.id}
+                className={`p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${tile.gradient} border-2 active:scale-95`}
+                onClick={() => navigate(tile.route)}
+              >
+                <div className="flex flex-col items-center text-center gap-3 sm:gap-4">
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl ${tile.iconColor} bg-background/50 flex items-center justify-center backdrop-blur-sm`}>
+                    <Icon name={tile.icon} size={window.innerWidth < 640 ? 24 : 32} className={tile.iconColor} />
+                  </div>
+                  
+                  {tile.count !== undefined && (
+                    <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
+                      {loading ? (
+                        <Icon name="Loader2" size={24} className="animate-spin text-muted-foreground" />
+                      ) : (
+                        tile.count
+                      )}
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold mb-1">{tile.title}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+                      {tile.description}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-
-          <Card className="p-8 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20">
-            <div className="flex items-start gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Icon name="Lightbulb" size={32} className="text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold mb-2">Следующие шаги</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('/matrices')}>
-                    <Icon name="CheckCircle" size={20} className="text-accent flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">Создайте матрицу приоритизации</p>
-                      <p className="text-sm text-muted-foreground">Настройте критерии оценки клиентов</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('/clients')}>
-                    <Icon name="CheckCircle" size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-muted-foreground">Добавьте первых клиентов</p>
-                      <p className="text-sm text-muted-foreground">Начните заполнять базу контактов</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3 cursor-pointer hover:opacity-80" onClick={() => navigate('/team')}>
-                    <Icon name="CheckCircle" size={20} className="text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-muted-foreground">Пригласите команду</p>
-                      <p className="text-sm text-muted-foreground">Добавьте коллег для совместной работы</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

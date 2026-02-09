@@ -18,6 +18,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/components/ui/alert';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface Matrix {
   id: number;
@@ -156,31 +157,33 @@ const Matrices = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Icon name="Loader2" size={48} className="text-primary animate-spin" />
-      </div>
+      <AppLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Icon name="Loader2" size={48} className="text-primary animate-spin" />
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <AppLayout>
+      <div className="border-b border-border bg-card/50">
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-              <Icon name="ArrowLeft" size={16} className="mr-2" />
-              Назад
+              <Icon name="ArrowLeft" size={16} />
+              <span className="hidden sm:inline ml-2">Назад</span>
             </Button>
-            <h1 className="text-xl font-bold">Матрицы приоритизации</h1>
+            <h1 className="text-lg sm:text-xl font-bold">Матрицы</h1>
           </div>
-          <Button className="gradient-primary" onClick={() => navigate('/matrix/new')}>
-            <Icon name="Plus" size={16} className="mr-2" />
-            Создать матрицу
+          <Button className="gradient-primary" size="sm" onClick={() => navigate('/matrix/new')}>
+            <Icon name="Plus" size={16} className="sm:mr-2" />
+            <span className="hidden sm:inline">Создать</span>
           </Button>
         </div>
-      </header>
+      </div>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="max-w-5xl mx-auto">
           {matrices.length === 0 ? (
             <Card className="p-12 text-center">
@@ -374,7 +377,7 @@ const Matrices = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 
