@@ -212,7 +212,7 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
             cur.execute('''
                 INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order)
                 VALUES (%s, %s, %s, %s)
-            ''', (new_criterion_id, status['label'], status['weight'], status['sort_order']))
+            ''', (new_criterion_id, status['label'], int(status['weight']), status['sort_order']))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Матрица создана из шаблона'}
