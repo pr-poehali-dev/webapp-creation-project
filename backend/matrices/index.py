@@ -91,11 +91,16 @@ def handler(event: dict, context) -> dict:
                 return handle_delete(payload, body)
             elif action == 'delete_permanently':
                 return handle_delete_permanently(payload, body)
+            elif action == 'update_axis_names':
+                return handle_update_axis_names(payload, body)
+            elif action == 'get':
+                matrix_id = body.get('matrix_id')
+                return handle_get(payload, matrix_id)
             else:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Invalid action. Use: create, update, or delete'}),
+                    'body': json.dumps({'error': 'Invalid action. Use: create, update, delete, update_axis_names, or get'}),
                     'isBase64Encoded': False
                 }
         else:
@@ -177,7 +182,7 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
     try:
         cur.execute(
             """
-            SELECT m.id, m.name, m.description, m.is_active, m.created_at, u.full_name
+            SELECT m.id, m.name, m.description, m.is_active, m.created_at, u.full_name, m.axis_x_name, m.axis_y_name
             FROM matrices m
             LEFT JOIN users u ON m.created_by = u.id
             WHERE m.id = %s AND m.organization_id = %s
@@ -200,7 +205,9 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
             'description': result[2],
             'is_active': result[3],
             'created_at': result[4].isoformat() if result[4] else None,
-            'created_by_name': result[5]
+            'created_by_name': result[5],
+            'axis_x_name': result[6] or 'Ось X',
+            'axis_y_name': result[7] or 'Ось Y'
         }
         
         cur.execute(
@@ -525,6 +532,75 @@ def handle_delete(payload: dict, body: dict) -> dict:
             'body': json.dumps({
                 'success': True,
                 'message': 'Матрица будет автоматически удалена через 3 дня'
+            }),
+            'isBase64Encoded': False
+        }
+    
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_update_axis_names(payload: dict, body: dict) -> dict:
+    """Обновление названий осей матрицы"""
+    if payload['role'] not in ['owner', 'admin', 'manager']:
+        return {
+            'statusCode': 403,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Permission denied'}),
+            'isBase64Encoded': False
+        }
+    
+    matrix_id = body.get('matrix_id')
+    axis_x_name = body.get('axis_x_name', '').strip()
+    axis_y_name = body.get('axis_y_name', '').strip()
+    
+    if not matrix_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'matrix_id is required'}),
+            'isBase64Encoded': False
+        }
+    
+    organization_id = payload['organization_id']
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute(
+            "SELECT organization_id FROM matrices WHERE id = %s" % matrix_id
+        )
+        result = cur.fetchone()
+        
+        if not result:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Matrix not found'}),
+                'isBase64Encoded': False
+            }
+        
+        if result[0] != organization_id:
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Cannot modify matrix from different organization'}),
+                'isBase64Encoded': False
+            }
+        
+        cur.execute(
+            "UPDATE matrices SET axis_x_name = '%s', axis_y_name = '%s', updated_at = CURRENT_TIMESTAMP WHERE id = %s" % (axis_x_name.replace("'", "''"), axis_y_name.replace("'", "''"), matrix_id)
+        )
+        conn.commit()
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'success': True,
+                'message': 'Axis names updated successfully'
             }),
             'isBase64Encoded': False
         }

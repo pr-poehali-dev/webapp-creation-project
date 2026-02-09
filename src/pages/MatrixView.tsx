@@ -4,6 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Client {
   id: number;
@@ -18,6 +28,8 @@ interface Matrix {
   id: number;
   name: string;
   description: string;
+  axis_x_name: string;
+  axis_y_name: string;
 }
 
 const MatrixView = () => {
@@ -26,6 +38,9 @@ const MatrixView = () => {
   const [loading, setLoading] = useState(true);
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [editAxisDialogOpen, setEditAxisDialogOpen] = useState(false);
+  const [axisXName, setAxisXName] = useState('');
+  const [axisYName, setAxisYName] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -53,6 +68,8 @@ const MatrixView = () => {
       const data = await response.json();
       if (response.ok) {
         setMatrix(data.matrix);
+        setAxisXName(data.matrix.axis_x_name || 'Ось X');
+        setAxisYName(data.matrix.axis_y_name || 'Ось Y');
       }
     } catch (error) {
       console.error('Ошибка загрузки матрицы:', error);
@@ -91,6 +108,32 @@ const MatrixView = () => {
   const monitorClients = getQuadrantClients('monitor');
   const archiveClients = getQuadrantClients('archive');
 
+  const handleUpdateAxisNames = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          action: 'update_axis_names', 
+          matrix_id: parseInt(id!),
+          axis_x_name: axisXName,
+          axis_y_name: axisYName
+        }),
+      });
+
+      if (response.ok) {
+        setEditAxisDialogOpen(false);
+        fetchMatrix();
+      }
+    } catch (error) {
+      console.error('Ошибка обновления названий осей:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -114,6 +157,10 @@ const MatrixView = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={() => setEditAxisDialogOpen(true)}>
+                <Icon name="Edit" size={20} className="mr-2" />
+                Названия осей
+              </Button>
               <Button variant="outline" onClick={() => navigate(`/matrix/${id}`)}>
                 <Icon name="Settings" size={20} className="mr-2" />
                 Настроить матрицу
@@ -266,14 +313,14 @@ const MatrixView = () => {
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 -mb-8">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Icon name="TrendingUp" size={16} className="text-primary" />
-                <span>Стратегическое влияние (X)</span>
+                <span>{matrix?.axis_x_name || 'Ось X'}</span>
               </div>
             </div>
 
             <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-12 -rotate-90">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Icon name="Target" size={16} className="text-secondary" />
-                <span>Зрелость потребности (Y)</span>
+                <span>{matrix?.axis_y_name || 'Ось Y'}</span>
               </div>
             </div>
           </div>
@@ -295,6 +342,45 @@ const MatrixView = () => {
           </Card>
         )}
       </div>
+
+      <Dialog open={editAxisDialogOpen} onOpenChange={setEditAxisDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать названия осей</DialogTitle>
+            <DialogDescription>
+              Укажите названия для осей X и Y вашей матрицы
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="axis-x">Название оси X (горизонтальная)</Label>
+              <Input
+                id="axis-x"
+                value={axisXName}
+                onChange={(e) => setAxisXName(e.target.value)}
+                placeholder="Например: Стратегическое влияние"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="axis-y">Название оси Y (вертикальная)</Label>
+              <Input
+                id="axis-y"
+                value={axisYName}
+                onChange={(e) => setAxisYName(e.target.value)}
+                placeholder="Например: Зрелость потребности"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditAxisDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button onClick={handleUpdateAxisNames}>
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
