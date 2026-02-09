@@ -34,7 +34,8 @@ interface ClientsMatrixViewProps {
 }
 
 const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatrixViewProps) => {
-  const MATRIX_SIZE = 600;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const MATRIX_SIZE = isMobile ? 280 : 600;
 
   const getQuadrantConfig = (quadrant: string) => {
     switch (quadrant) {
@@ -66,29 +67,29 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
   ];
 
   return (
-    <div className="flex flex-col items-center gap-8">
-      <div className="relative" style={{ width: MATRIX_SIZE + 120, height: MATRIX_SIZE + 120 }}>
+    <div className="flex flex-col items-center gap-4 sm:gap-8 w-full overflow-x-auto px-2">
+      <div className="relative min-w-fit" style={{ width: MATRIX_SIZE + (isMobile ? 60 : 120), height: MATRIX_SIZE + (isMobile ? 60 : 120) }}>
         <div 
-          className="absolute left-1/2 -translate-x-1/2 -top-12 flex flex-col items-center gap-2"
+          className="absolute left-1/2 -translate-x-1/2 -top-8 sm:-top-12 flex flex-col items-center gap-1 sm:gap-2"
         >
           <div className="flex flex-col items-center gap-1">
-            <div className="w-1 h-8 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-primary"></div>
+            <div className="w-1 h-4 sm:h-8 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
+            <div className="w-0 h-0 border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-b-[8px] sm:border-b-[12px] border-b-primary"></div>
           </div>
-          <span className="text-base font-bold text-foreground">
+          <span className="text-xs sm:text-base font-bold text-foreground text-center">
             {matrixData?.axis_y_name || 'Ось Y'}
           </span>
         </div>
 
         <div 
-          className="absolute -left-12 top-1/2 -translate-y-1/2 flex items-center gap-2"
+          className="absolute -left-8 sm:-left-12 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2"
         >
           <div className="flex items-center gap-1">
-            <div className="h-1 w-8 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-r-[12px] border-r-primary"></div>
+            <div className="h-1 w-4 sm:w-8 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
+            <div className="w-0 h-0 border-t-[6px] sm:border-t-[8px] border-t-transparent border-b-[6px] sm:border-b-[8px] border-b-transparent border-r-[8px] sm:border-r-[12px] border-r-primary"></div>
           </div>
           <span 
-            className="text-base font-bold text-foreground"
+            className="text-xs sm:text-base font-bold text-foreground"
             style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
           >
             {matrixData?.axis_x_name || 'Ось X'}
@@ -97,7 +98,7 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
 
         <div 
           className="grid grid-cols-2 grid-rows-2 gap-0 relative"
-          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: '60px' }}
+          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: isMobile ? '30px' : '60px' }}
         >
           {quadrants.map(({ key, position }) => {
             const config = getQuadrantConfig(key);
@@ -118,14 +119,14 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
                   height: MATRIX_SIZE / 2,
                 }}
               >
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-2 sm:gap-4">
                   <div className={`${config.iconColor} transition-transform group-hover:scale-110`}>
-                    <Icon name={config.icon} size={48} />
+                    <Icon name={config.icon} size={isMobile ? 24 : 48} />
                   </div>
-                  <div className="text-6xl font-bold text-foreground group-hover:scale-125 transition-transform">
+                  <div className="text-3xl sm:text-6xl font-bold text-foreground group-hover:scale-125 transition-transform">
                     {count}
                   </div>
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider text-center px-1">
                     {config.label}
                   </div>
                 </div>

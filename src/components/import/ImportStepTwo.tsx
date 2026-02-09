@@ -91,47 +91,50 @@ const ImportStepTwo = ({
           </div>
         )}
 
-        <div className="mb-6 overflow-x-auto">
-          <h3 className="text-sm font-semibold mb-3">Превью первых 5 строк:</h3>
-          <table className="w-full text-sm border border-border rounded-lg">
-            <thead className="bg-muted">
-              <tr>
-                {columns.map((col) => (
-                  <th key={col} className="px-4 py-2 text-left font-medium border-b border-border">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {preview.map((row, idx) => (
-                <tr key={idx} className="border-b border-border hover:bg-muted/50">
+        <div className="mb-6 overflow-x-auto -mx-2 sm:mx-0">
+          <h3 className="text-sm font-semibold mb-3 px-2 sm:px-0">Превью первых 5 строк:</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-xs sm:text-sm border border-border rounded-lg">
+              <thead className="bg-muted">
+                <tr>
                   {columns.map((col) => (
-                    <td key={col} className="px-4 py-2">
-                      {row[col] || '-'}
-                    </td>
+                    <th key={col} className="px-2 sm:px-4 py-2 text-left font-medium border-b border-border whitespace-nowrap">
+                      {col}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {preview.map((row, idx) => (
+                  <tr key={idx} className="border-b border-border hover:bg-muted/50">
+                    {columns.map((col) => (
+                      <td key={col} className="px-2 sm:px-4 py-2 whitespace-nowrap">
+                        {row[col] || '-'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="space-y-3">
           <h3 className="text-sm font-semibold mb-3">Сопоставление колонок с полями CRM:</h3>
           {columns.map((col) => (
-            <div key={col} className="flex items-center gap-4 p-3 bg-card border border-border rounded-lg">
-              <div className="flex-1">
+            <div key={col} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-3 bg-card border border-border rounded-lg">
+              <div className="flex-1 w-full sm:w-auto">
                 <Badge variant="outline" className="font-mono text-xs">
                   {col}
                 </Badge>
               </div>
-              <Icon name="ArrowRight" size={20} className="text-muted-foreground" />
-              <div className="flex-1">
+              <Icon name="ArrowRight" size={16} className="text-muted-foreground hidden sm:block" />
+              <Icon name="ArrowDown" size={16} className="text-muted-foreground sm:hidden ml-2" />
+              <div className="flex-1 w-full">
                 <select
                   value={mapping[col] || 'skip'}
                   onChange={(e) => setMapping({ ...mapping, [col]: e.target.value })}
-                  className="w-full px-3 py-2 bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  className="w-full px-2 sm:px-3 py-2 bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-xs sm:text-sm"
                 >
                   {crmFields.map((field) => (
                     <option key={field.value} value={field.value}>
@@ -143,7 +146,7 @@ const ImportStepTwo = ({
                   </option>
                 </select>
               </div>
-              <div className="w-24 text-right">
+              <div className="w-full sm:w-24 text-left sm:text-right">
                 {mapping[col] === 'skip' ? (
                   <Badge variant="outline" className="text-xs text-muted-foreground">
                     Пропущено

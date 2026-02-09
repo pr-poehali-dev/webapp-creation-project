@@ -216,49 +216,49 @@ const Index = () => {
                 </Card>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="p-6 quadrant-focus text-white border-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                      <Icon name="Zap" size={20} className="text-white" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <Card className="p-4 sm:p-6 quadrant-focus text-white border-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <Icon name="Zap" size={16} className="text-white sm:w-5 sm:h-5" />
                     </div>
-                    <h4 className="text-lg font-bold">🔴 Фокус сейчас</h4>
+                    <h4 className="text-sm sm:text-base md:text-lg font-bold">🔴 Фокус сейчас</h4>
                   </div>
-                  <p className="text-sm text-white/90">Высокое влияние + Высокая зрелость</p>
-                  <p className="text-xs text-white/70 mt-2">Ежедневная работа, максимальный приоритет</p>
+                  <p className="text-xs sm:text-sm text-white/90">Высокое влияние + Высокая зрелость</p>
+                  <p className="text-[10px] sm:text-xs text-white/70 mt-1 sm:mt-2">Ежедневная работа, максимальный приоритет</p>
                 </Card>
 
-                <Card className="p-6 quadrant-grow text-white border-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                      <Icon name="TrendingUp" size={20} className="text-white" />
+                <Card className="p-4 sm:p-6 quadrant-grow text-white border-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <Icon name="TrendingUp" size={16} className="text-white sm:w-5 sm:h-5" />
                     </div>
-                    <h4 className="text-lg font-bold">🟠 Выращивать</h4>
+                    <h4 className="text-sm sm:text-base md:text-lg font-bold">🟠 Выращивать</h4>
                   </div>
-                  <p className="text-sm text-white/90">Высокое влияние + Низкая зрелость</p>
-                  <p className="text-xs text-white/70 mt-2">Системная работа над ТЗ и бюджетом</p>
+                  <p className="text-xs sm:text-sm text-white/90">Высокое влияние + Низкая зрелость</p>
+                  <p className="text-[10px] sm:text-xs text-white/70 mt-1 sm:mt-2">Системная работа над ТЗ и бюджетом</p>
                 </Card>
 
-                <Card className="p-6 quadrant-monitor text-white border-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                      <Icon name="Eye" size={20} className="text-white" />
+                <Card className="p-4 sm:p-6 quadrant-monitor text-white border-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <Icon name="Eye" size={16} className="text-white sm:w-5 sm:h-5" />
                     </div>
-                    <h4 className="text-lg font-bold">🟡 Мониторить</h4>
+                    <h4 className="text-sm sm:text-base md:text-lg font-bold">🟡 Мониторить</h4>
                   </div>
-                  <p className="text-sm text-white/90">Низкое влияние + Высокая зрелость</p>
-                  <p className="text-xs text-white/70 mt-2">Минимум усилий для закрытия</p>
+                  <p className="text-xs sm:text-sm text-white/90">Низкое влияние + Высокая зрелость</p>
+                  <p className="text-[10px] sm:text-xs text-white/70 mt-1 sm:mt-2">Минимум усилий для закрытия</p>
                 </Card>
 
-                <Card className="p-6 quadrant-archive text-gray-300 border-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                      <Icon name="Archive" size={20} className="text-gray-300" />
+                <Card className="p-4 sm:p-6 quadrant-archive text-gray-300 border-0">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <Icon name="Archive" size={16} className="text-gray-300 sm:w-5 sm:h-5" />
                     </div>
-                    <h4 className="text-lg font-bold">⚪ Архив</h4>
+                    <h4 className="text-sm sm:text-base md:text-lg font-bold">⚪ Архив</h4>
                   </div>
-                  <p className="text-sm text-gray-400">Низкое влияние + Низкая зрелость</p>
-                  <p className="text-xs text-gray-500 mt-2">Напоминание через 90 дней</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Низкое влияние + Низкая зрелость</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2">Напоминание через 90 дней</p>
                 </Card>
               </div>
             </div>

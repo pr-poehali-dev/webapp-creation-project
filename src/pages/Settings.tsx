@@ -316,30 +316,32 @@ const Settings = () => {
           </div>
         )}
 
-        <div className="mb-6 flex gap-2 border-b border-border">
+        <div className="mb-6 flex flex-wrap gap-2 border-b border-border">
           <Button
             variant={activeTab === 'organization' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('organization')}
-            className="rounded-b-none"
+            className="rounded-b-none text-xs sm:text-sm px-2 sm:px-4"
           >
-            <Icon name="Building2" size={16} className="mr-2" />
-            Организация
+            <Icon name="Building2" size={14} className="sm:mr-2" />
+            <span className="hidden sm:inline">Организация</span>
           </Button>
           <Button
             variant={activeTab === 'statuses' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('statuses')}
-            className="rounded-b-none"
+            className="rounded-b-none text-xs sm:text-sm px-2 sm:px-4"
           >
-            <Icon name="ListChecks" size={16} className="mr-2" />
-            Статусы сделок
+            <Icon name="ListChecks" size={14} className="sm:mr-2" />
+            <span className="hidden sm:inline">Статусы сделок</span>
+            <span className="sm:hidden">Статусы</span>
           </Button>
           <Button
             variant={activeTab === 'permissions' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('permissions')}
-            className="rounded-b-none"
+            className="rounded-b-none text-xs sm:text-sm px-2 sm:px-4"
           >
-            <Icon name="Shield" size={16} className="mr-2" />
-            Права доступа
+            <Icon name="Shield" size={14} className="sm:mr-2" />
+            <span className="hidden sm:inline">Права доступа</span>
+            <span className="sm:hidden">Права</span>
           </Button>
         </div>
 
