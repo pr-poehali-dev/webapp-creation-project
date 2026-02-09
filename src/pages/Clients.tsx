@@ -35,21 +35,22 @@ interface DealStatus {
 interface Matrix {
   id: number;
   name: string;
+  axis_x_name: string;
+  axis_y_name: string;
 }
-
-type ViewMode = 'matrix' | 'list';
 
 const Clients = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
+  const [allClients, setAllClients] = useState<Client[]>([]);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
+  const [selectedMatrix, setSelectedMatrix] = useState<Matrix | null>(null);
   const [dealStatuses, setDealStatuses] = useState<DealStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterQuadrant, setFilterQuadrant] = useState<string>('');
+  const [selectedQuadrant, setSelectedQuadrant] = useState<string>('');
   const [filterDealStatus, setFilterDealStatus] = useState<string>('');
-  const [filterMatrix, setFilterMatrix] = useState<string>('');
   const [hasMatrices, setHasMatrices] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>('matrix');
+  const [showList, setShowList] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -63,10 +64,18 @@ const Clients = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (filterMatrix) {
+    if (selectedMatrix) {
       fetchClients();
     }
-  }, [filterQuadrant, filterDealStatus, filterMatrix]);
+  }, [selectedMatrix]);
+
+  useEffect(() => {
+    if (selectedQuadrant || filterDealStatus) {
+      filterClients();
+    } else {
+      setClients(allClients);
+    }
+  }, [selectedQuadrant, filterDealStatus, allClients]);
 
   const checkMatrices = async () => {
     try {
@@ -82,8 +91,9 @@ const Clients = () => {
       if (response.ok) {
         setMatrices(data.matrices || []);
         setHasMatrices(data.matrices && data.matrices.length > 0);
-        if (data.matrices && data.matrices.length > 0 && !filterMatrix) {
-          setFilterMatrix(data.matrices[0].id.toString());
+        if (data.matrices && data.matrices.length > 0) {
+          const firstMatrix = data.matrices[0];
+          setSelectedMatrix(firstMatrix);
         }
       }
     } catch (error) {
@@ -121,14 +131,13 @@ const Clients = () => {
         },
         body: JSON.stringify({
           action: 'list',
-          quadrant: filterQuadrant || undefined,
-          deal_status_id: filterDealStatus ? parseInt(filterDealStatus) : undefined,
-          matrix_id: filterMatrix ? parseInt(filterMatrix) : undefined,
+          matrix_id: selectedMatrix?.id,
         }),
       });
 
       const data = await response.json();
       if (response.ok) {
+        setAllClients(data.clients);
         setClients(data.clients);
       }
     } catch (error) {
@@ -136,6 +145,31 @@ const Clients = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterClients = () => {
+    let filtered = [...allClients];
+
+    if (selectedQuadrant) {
+      filtered = filtered.filter(c => c.quadrant === selectedQuadrant);
+    }
+
+    if (filterDealStatus) {
+      filtered = filtered.filter(c => c.deal_status_id === parseInt(filterDealStatus));
+    }
+
+    setClients(filtered);
+  };
+
+  const handleQuadrantClick = (quadrant: string) => {
+    setSelectedQuadrant(quadrant);
+    setShowList(true);
+  };
+
+  const handleBackToMatrix = () => {
+    setSelectedQuadrant('');
+    setFilterDealStatus('');
+    setShowList(false);
   };
 
   const getQuadrantConfig = (quadrant: string) => {
@@ -153,11 +187,8 @@ const Clients = () => {
     }
   };
 
-  const quadrantCounts = {
-    focus: clients.filter(c => c.quadrant === 'focus').length,
-    grow: clients.filter(c => c.quadrant === 'grow').length,
-    monitor: clients.filter(c => c.quadrant === 'monitor').length,
-    archive: clients.filter(c => c.quadrant === 'archive').length,
+  const handleClientClick = (id: number) => {
+    navigate(`/client/${id}`);
   };
 
   return (
@@ -171,7 +202,9 @@ const Clients = () => {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Клиенты</h1>
-                <p className="text-sm text-muted-foreground">Управление базой клиентов</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedMatrix ? selectedMatrix.name : 'Управление базой клиентов'}
+                </p>
               </div>
             </div>
             {hasMatrices ? (
@@ -192,188 +225,96 @@ const Clients = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1">
-              <Button
-                variant={viewMode === 'matrix' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('matrix')}
-                className="flex items-center gap-2"
-              >
-                <Icon name="Grid3x3" size={16} />
-                Матрица клиентов
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="flex items-center gap-2"
-              >
-                <Icon name="List" size={16} />
-                Список клиентов
-              </Button>
-            </div>
-
-            {matrices.length > 1 && viewMode === 'matrix' && (
-              <div className="flex items-center gap-2">
-                <Icon name="Layout" size={20} className="text-muted-foreground" />
-                <select
-                  value={filterMatrix}
-                  onChange={(e) => setFilterMatrix(e.target.value)}
-                  className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {matrices.map((matrix) => (
-                    <option key={matrix.id} value={matrix.id}>
-                      {matrix.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Icon name="Filter" size={20} className="text-muted-foreground" />
-            <span className="text-sm font-medium">Фильтр по статусу сделки:</span>
-          </div>
-          <select
-            value={filterDealStatus}
-            onChange={(e) => setFilterDealStatus(e.target.value)}
-            className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Все статусы</option>
-            {dealStatuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.name}
-              </option>
-            ))}
-          </select>
-          {filterDealStatus && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterDealStatus('')}
+        {matrices.length > 1 && (
+          <div className="mb-8 flex items-center justify-center gap-4">
+            <Icon name="Layout" size={20} className="text-muted-foreground" />
+            <select
+              value={selectedMatrix?.id || ''}
+              onChange={(e) => {
+                const matrix = matrices.find(m => m.id === parseInt(e.target.value));
+                setSelectedMatrix(matrix || null);
+                setShowList(false);
+                setSelectedQuadrant('');
+              }}
+              className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <Icon name="X" size={16} className="mr-2" />
-              Сбросить
-            </Button>
-          )}
-        </div>
-
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <Card
-            className={`p-4 cursor-pointer transition-all hover:scale-105 ${filterQuadrant === 'focus' ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setFilterQuadrant(filterQuadrant === 'focus' ? '' : 'focus')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">🔴 Фокус сейчас</p>
-                <p className="text-3xl font-bold text-green-500">{quadrantCounts.focus}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg quadrant-focus flex items-center justify-center">
-                <Icon name="Zap" size={24} className="text-white" />
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            className={`p-4 cursor-pointer transition-all hover:scale-105 ${filterQuadrant === 'grow' ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setFilterQuadrant(filterQuadrant === 'grow' ? '' : 'grow')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">🟠 Выращивать</p>
-                <p className="text-3xl font-bold text-blue-500">{quadrantCounts.grow}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg quadrant-grow flex items-center justify-center">
-                <Icon name="TrendingUp" size={24} className="text-white" />
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            className={`p-4 cursor-pointer transition-all hover:scale-105 ${filterQuadrant === 'monitor' ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setFilterQuadrant(filterQuadrant === 'monitor' ? '' : 'monitor')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">🟡 Мониторить</p>
-                <p className="text-3xl font-bold text-yellow-500">{quadrantCounts.monitor}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg quadrant-monitor flex items-center justify-center">
-                <Icon name="Eye" size={24} className="text-white" />
-              </div>
-            </div>
-          </Card>
-
-          <Card
-            className={`p-4 cursor-pointer transition-all hover:scale-105 ${filterQuadrant === 'archive' ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setFilterQuadrant(filterQuadrant === 'archive' ? '' : 'archive')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">⚪ Архив</p>
-                <p className="text-3xl font-bold text-gray-500">{quadrantCounts.archive}</p>
-              </div>
-              <div className="w-12 h-12 rounded-lg quadrant-archive flex items-center justify-center">
-                <Icon name="Archive" size={24} className="text-gray-300" />
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {filterQuadrant && (
-          <div className="mb-4">
-            <Badge variant="outline" className="text-sm">
-              <Icon name="Filter" size={14} className="mr-2" />
-              Фильтр: {getQuadrantConfig(filterQuadrant).label}
-              <button onClick={() => setFilterQuadrant('')} className="ml-2">
-                <Icon name="X" size={14} />
-              </button>
-            </Badge>
+              {matrices.map((matrix) => (
+                <option key={matrix.id} value={matrix.id}>
+                  {matrix.name}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Icon name="Loader2" size={32} className="animate-spin text-primary" />
-          </div>
-        ) : clients.length === 0 && viewMode === 'list' ? (
-          <Card className="p-12 text-center border-dashed">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <Icon name="Building2" size={40} className="text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Пока нет клиентов</h3>
-            {!hasMatrices ? (
-              <p className="text-muted-foreground mb-6">
-                Сначала <Link to="/matrices/new" className="text-primary hover:underline">создайте матрицу</Link>, чтобы начать добавлять клиентов
-              </p>
-            ) : (
-              <p className="text-muted-foreground mb-6">
-                Добавьте первого клиента и начните работу с матрицей приоритизации
-              </p>
-            )}
-            <Link to="/client/new">
+        {!hasMatrices ? (
+          <Card className="p-8 text-center">
+            <Icon name="Layout" size={48} className="mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-xl font-semibold mb-2">Матриц пока нет</h3>
+            <p className="text-muted-foreground mb-4">
+              Создайте матрицу приоритизации для управления клиентами
+            </p>
+            <Link to="/matrices/new">
               <Button className="gradient-primary">
                 <Icon name="Plus" size={20} className="mr-2" />
-                Добавить первого клиента
+                Создать матрицу
               </Button>
             </Link>
           </Card>
-        ) : viewMode === 'matrix' ? (
+        ) : loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Загрузка...</p>
+          </div>
+        ) : showList ? (
+          <div>
+            <div className="mb-6 flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={handleBackToMatrix}
+                className="flex items-center gap-2"
+              >
+                <Icon name="ArrowLeft" size={16} />
+                Вернуться к матрице
+              </Button>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="Filter" size={20} className="text-muted-foreground" />
+                  <select
+                    value={filterDealStatus}
+                    onChange={(e) => setFilterDealStatus(e.target.value)}
+                    className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Все статусы сделок</option>
+                    {dealStatuses.map((status) => (
+                      <option key={status.id} value={status.id}>
+                        {status.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {selectedQuadrant && (
+              <div className="mb-4">
+                <Badge className={getQuadrantConfig(selectedQuadrant).color}>
+                  {getQuadrantConfig(selectedQuadrant).label}
+                </Badge>
+              </div>
+            )}
+
+            <ClientsListView
+              clients={clients}
+              onClientClick={handleClientClick}
+              getQuadrantConfig={getQuadrantConfig}
+            />
+          </div>
+        ) : (
           <ClientsMatrixView
             clients={clients}
-            onClientClick={(id) => navigate(`/client/${id}`)}
-            getQuadrantConfig={getQuadrantConfig}
-          />
-        ) : (
-          <ClientsListView
-            clients={clients}
-            onClientClick={(id) => navigate(`/client/${id}`)}
-            getQuadrantConfig={getQuadrantConfig}
+            matrixData={selectedMatrix}
+            onQuadrantClick={handleQuadrantClick}
           />
         )}
       </div>
