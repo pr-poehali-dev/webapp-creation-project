@@ -674,25 +674,36 @@ def handle_delete_permanently(payload: dict, body: dict) -> dict:
         
         # Каскадное удаление в правильном порядке
         
-        # 1. Удаляем статусы критериев
+        # 1. Удаляем оценки клиентов по критериям (client_scores и client_criterion_scores)
+        cur.execute(
+            "DELETE FROM client_scores WHERE criterion_id IN (SELECT id FROM matrix_criteria WHERE matrix_id = %s)" % matrix_id
+        )
+        deleted_client_scores = cur.rowcount
+        
+        cur.execute(
+            "DELETE FROM client_criterion_scores WHERE criterion_id IN (SELECT id FROM matrix_criteria WHERE matrix_id = %s)" % matrix_id
+        )
+        deleted_criterion_scores = cur.rowcount
+        
+        # 2. Удаляем статусы критериев
         cur.execute(
             "DELETE FROM criterion_statuses WHERE criterion_id IN (SELECT id FROM matrix_criteria WHERE matrix_id = %s)" % matrix_id
         )
         deleted_statuses = cur.rowcount
         
-        # 2. Удаляем критерии матрицы
+        # 3. Удаляем критерии матрицы
         cur.execute(
             "DELETE FROM matrix_criteria WHERE matrix_id = %s" % matrix_id
         )
         deleted_criteria = cur.rowcount
         
-        # 3. Отвязываем клиентов от матрицы (НЕ удаляем их!)
+        # 4. Отвязываем клиентов от матрицы (НЕ удаляем их!)
         cur.execute(
             "UPDATE clients SET matrix_id = NULL, score_x = 0, score_y = 0, quadrant = NULL WHERE matrix_id = %s" % matrix_id
         )
         unlinked_clients = cur.rowcount
         
-        # 4. Удаляем саму матрицу
+        # 5. Удаляем саму матрицу
         cur.execute("DELETE FROM matrices WHERE id = %s" % matrix_id)
         
         conn.commit()
