@@ -138,7 +138,8 @@ def handle_list(payload: dict) -> dict:
             WHERE m.organization_id = %s
             GROUP BY m.id, m.name, m.description, m.is_active, m.created_at, m.deleted_at, u.full_name
             ORDER BY m.deleted_at IS NULL DESC, m.is_active DESC, m.created_at DESC
-            """ % organization_id
+            """,
+            (organization_id,)
         )
         
         matrices = []
@@ -180,7 +181,8 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
             FROM matrices m
             LEFT JOIN users u ON m.created_by = u.id
             WHERE m.id = %s AND m.organization_id = %s
-            """ % (matrix_id, organization_id)
+            """,
+            (matrix_id, organization_id)
         )
         
         result = cur.fetchone()
@@ -207,7 +209,8 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
             FROM matrix_criteria
             WHERE matrix_id = %s
             ORDER BY axis, sort_order
-            """ % matrix_id
+            """,
+            (matrix_id,)
         )
         
         criteria = []
@@ -216,7 +219,8 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
             
             cur.execute(
                 """SELECT label, weight, sort_order FROM criterion_statuses 
-                   WHERE criterion_id = %s ORDER BY sort_order""" % criterion_id
+                   WHERE criterion_id = %s ORDER BY sort_order""",
+                (criterion_id,)
             )
             statuses = []
             for status_row in cur.fetchall():
