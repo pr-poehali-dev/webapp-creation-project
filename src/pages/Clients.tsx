@@ -64,6 +64,7 @@ const Clients = () => {
 
     checkMatrices();
     fetchDealStatuses();
+    fetchUnratedClients();
   }, [navigate]);
 
   useEffect(() => {
@@ -257,35 +258,36 @@ const Clients = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
-        {!hasMatrices ? (
-          <Card className="p-8 text-center">
-            <Icon name="Layout" size={48} className="mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">Матриц пока нет</h3>
-            <p className="text-muted-foreground mb-4">
-              Создайте матрицу приоритизации для управления клиентами
-            </p>
-            <Link to="/matrices/new">
-              <Button className="gradient-primary">
-                <Icon name="Plus" size={20} className="mr-2" />
-                Создать матрицу
-              </Button>
-            </Link>
-          </Card>
-        ) : (
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'matrices' | 'unrated')}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="matrices" className="flex items-center gap-2">
-                <Icon name="Grid3x3" size={16} />
-                Матрицы ({matrices.length})
-              </TabsTrigger>
-              <TabsTrigger value="unrated" className="flex items-center gap-2">
-                <Icon name="Users" size={16} />
-                Без оценки ({unratedClients.length})
-              </TabsTrigger>
-            </TabsList>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'matrices' | 'unrated')}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="matrices" className="flex items-center gap-2">
+              <Icon name="Grid3x3" size={16} />
+              Матрицы ({matrices.length})
+            </TabsTrigger>
+            <TabsTrigger value="unrated" className="flex items-center gap-2">
+              <Icon name="Users" size={16} />
+              Без оценки ({unratedClients.length})
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="matrices">
-              {matrices.length > 1 && (
+          <TabsContent value="matrices">
+            {!hasMatrices ? (
+              <Card className="p-8 text-center">
+                <Icon name="Layout" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">Матриц пока нет</h3>
+                <p className="text-muted-foreground mb-4">
+                  Создайте матрицу приоритизации для управления клиентами
+                </p>
+                <Link to="/matrices/new">
+                  <Button className="gradient-primary">
+                    <Icon name="Plus" size={20} className="mr-2" />
+                    Создать матрицу
+                  </Button>
+                </Link>
+              </Card>
+            ) : (
+              <>
+                {matrices.length > 1 && (
                 <div className="mb-8 flex items-center justify-center gap-4">
                   <Icon name="Layout" size={20} className="text-muted-foreground" />
                   <select
@@ -363,6 +365,8 @@ const Clients = () => {
             onQuadrantClick={handleQuadrantClick}
           />
         )}
+              </>
+            )}
       </TabsContent>
 
       <TabsContent value="unrated">
@@ -393,7 +397,6 @@ const Clients = () => {
         </Card>
       </TabsContent>
     </Tabs>
-        )}
       </div>
     </div>
   );
