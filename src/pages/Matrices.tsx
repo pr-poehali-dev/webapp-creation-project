@@ -5,6 +5,19 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/alert';
 
 interface Matrix {
   id: number;
@@ -17,10 +30,21 @@ interface Matrix {
   criteria_count: number;
 }
 
+interface DeleteStats {
+  matrix_name: string;
+  criteria_count: number;
+  statuses_count: number;
+  clients_count: number;
+}
+
 const Matrices = () => {
   const navigate = useNavigate();
   const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMatrix, setSelectedMatrix] = useState<number | null>(null);
+  const [deleteStats, setDeleteStats] = useState<DeleteStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -50,10 +74,45 @@ const Matrices = () => {
     }
   };
 
-  const handleDeletePermanently = async (matrixId: number, matrixName: string) => {
-    if (!confirm(`Вы уверены, что хотите удалить матрицу "${matrixName}" навсегда? Это действие нельзя отменить.`)) {
-      return;
+  const handleOpenDeleteDialog = async (matrixId: number) => {
+    setSelectedMatrix(matrixId);
+    setLoadingStats(true);
+    setDeleteDialogOpen(true);
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'get_delete_stats',
+          matrix_id: matrixId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setDeleteStats(data);
+      } else {
+        toast.error(data.error || 'Ошибка загрузки статистики');
+        setDeleteDialogOpen(false);
+      }
+    } catch (err) {
+      toast.error('Ошибка загрузки статистики');
+      setDeleteDialogOpen(false);
+    } finally {
+      setLoadingStats(false);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedMatrix) return;
 
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -67,7 +126,7 @@ const Matrices = () => {
         },
         body: JSON.stringify({
           action: 'delete_permanently',
-          matrix_id: matrixId
+          matrix_id: selectedMatrix
         })
       });
 
@@ -75,6 +134,9 @@ const Matrices = () => {
       
       if (response.ok) {
         toast.success('Матрица удалена навсегда');
+        setDeleteDialogOpen(false);
+        setSelectedMatrix(null);
+        setDeleteStats(null);
         fetchMatrices(token);
       } else {
         toast.error(data.error || 'Ошибка удаления матрицы');
@@ -224,7 +286,7 @@ const Matrices = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeletePermanently(matrix.id, matrix.name);
+                              handleOpenDeleteDialog(matrix.id);
                             }}
                           >
                             <Icon name="Trash2" size={16} className="mr-2" />
@@ -240,6 +302,78 @@ const Matrices = () => {
           )}
         </div>
       </main>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Удалить матрицу навсегда?</DialogTitle>
+            <DialogDescription>
+              Это действие необратимо. Все данные будут удалены.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingStats ? (
+            <div className="py-8 flex items-center justify-center">
+              <Icon name="Loader2" size={32} className="animate-spin text-primary" />
+            </div>
+          ) : deleteStats ? (
+            <div className="space-y-4">
+              <Alert variant="destructive">
+                <Icon name="AlertTriangle" size={20} />
+                <AlertTitle>Внимание! Это действие необратимо</AlertTitle>
+                <AlertDescription className="mt-2 space-y-2">
+                  <p className="font-semibold">Будет удалено:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li><strong>{deleteStats.criteria_count}</strong> критериев оценки</li>
+                    <li><strong>{deleteStats.statuses_count}</strong> статусов критериев</li>
+                  </ul>
+                  
+                  {deleteStats.clients_count > 0 && (
+                    <div className="mt-3 p-3 bg-background rounded-md border border-destructive/20">
+                      <p className="font-semibold flex items-center gap-2 mb-1">
+                        <Icon name="Users" size={16} />
+                        {deleteStats.clients_count} {deleteStats.clients_count === 1 ? 'клиент будет отвязан' : deleteStats.clients_count < 5 ? 'клиента будут отвязаны' : 'клиентов будут отвязаны'} от матрицы
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Клиенты переместятся в раздел "Клиенты без оценки". 
+                        Их контактные данные сохранятся, но оценки по осям X и Y будут сброшены.
+                      </p>
+                    </div>
+                  )}
+                </AlertDescription>
+              </Alert>
+
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <Icon name="Info" size={16} className="inline mr-1" />
+                  Данные клиентов (название компании, контакты, описание) будут сохранены.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setSelectedMatrix(null);
+                setDeleteStats(null);
+              }}
+            >
+              Отмена
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              disabled={loadingStats}
+            >
+              <Icon name="Trash2" size={16} className="mr-2" />
+              Удалить навсегда
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

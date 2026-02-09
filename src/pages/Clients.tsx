@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import ClientsMatrixView from '@/components/client/ClientsMatrixView';
 import ClientsListView from '@/components/client/ClientsListView';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Client {
   id: number;
@@ -51,6 +52,8 @@ const Clients = () => {
   const [filterDealStatus, setFilterDealStatus] = useState<string>('');
   const [hasMatrices, setHasMatrices] = useState(true);
   const [showList, setShowList] = useState(false);
+  const [viewMode, setViewMode] = useState<'matrices' | 'unrated'>('matrices');
+  const [unratedClients, setUnratedClients] = useState<Client[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -76,6 +79,12 @@ const Clients = () => {
       setClients(allClients);
     }
   }, [selectedQuadrant, filterDealStatus, allClients]);
+
+  useEffect(() => {
+    if (viewMode === 'unrated') {
+      fetchUnratedClients();
+    }
+  }, [viewMode]);
 
   const checkMatrices = async () => {
     try {
@@ -144,6 +153,29 @@ const Clients = () => {
       console.error('Ошибка загрузки клиентов:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUnratedClients = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'list_unrated',
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setUnratedClients(data.clients);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки клиентов без оценки:', error);
     }
   };
 
@@ -225,28 +257,6 @@ const Clients = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
-        {matrices.length > 1 && (
-          <div className="mb-8 flex items-center justify-center gap-4">
-            <Icon name="Layout" size={20} className="text-muted-foreground" />
-            <select
-              value={selectedMatrix?.id || ''}
-              onChange={(e) => {
-                const matrix = matrices.find(m => m.id === parseInt(e.target.value));
-                setSelectedMatrix(matrix || null);
-                setShowList(false);
-                setSelectedQuadrant('');
-              }}
-              className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {matrices.map((matrix) => (
-                <option key={matrix.id} value={matrix.id}>
-                  {matrix.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {!hasMatrices ? (
           <Card className="p-8 text-center">
             <Icon name="Layout" size={48} className="mx-auto mb-4 text-muted-foreground" />
@@ -261,11 +271,47 @@ const Clients = () => {
               </Button>
             </Link>
           </Card>
-        ) : loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Загрузка...</p>
-          </div>
-        ) : showList ? (
+        ) : (
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'matrices' | 'unrated')}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="matrices" className="flex items-center gap-2">
+                <Icon name="Grid3x3" size={16} />
+                Матрицы ({matrices.length})
+              </TabsTrigger>
+              <TabsTrigger value="unrated" className="flex items-center gap-2">
+                <Icon name="Users" size={16} />
+                Без оценки ({unratedClients.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="matrices">
+              {matrices.length > 1 && (
+                <div className="mb-8 flex items-center justify-center gap-4">
+                  <Icon name="Layout" size={20} className="text-muted-foreground" />
+                  <select
+                    value={selectedMatrix?.id || ''}
+                    onChange={(e) => {
+                      const matrix = matrices.find(m => m.id === parseInt(e.target.value));
+                      setSelectedMatrix(matrix || null);
+                      setShowList(false);
+                      setSelectedQuadrant('');
+                    }}
+                    className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    {matrices.map((matrix) => (
+                      <option key={matrix.id} value={matrix.id}>
+                        {matrix.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Загрузка...</p>
+                </div>
+              ) : showList ? (
           <div>
             <div className="mb-6 flex items-center justify-between">
               <Button
@@ -316,6 +362,37 @@ const Clients = () => {
             matrixData={selectedMatrix}
             onQuadrantClick={handleQuadrantClick}
           />
+        )}
+      </TabsContent>
+
+      <TabsContent value="unrated">
+        <Card>
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="Users" size={24} className="text-primary" />
+              <h2 className="text-xl font-semibold">Клиенты без оценки</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Клиенты, которые не привязаны ни к одной матрице приоритизации
+            </p>
+          </div>
+          <div className="p-6">
+            {unratedClients.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="CheckCircle" size={48} className="mx-auto mb-4 text-green-500" />
+                <p className="text-muted-foreground">Все клиенты оценены!</p>
+              </div>
+            ) : (
+              <ClientsListView
+                clients={unratedClients}
+                onClientClick={handleClientClick}
+                getQuadrantConfig={getQuadrantConfig}
+              />
+            )}
+          </div>
+        </Card>
+      </TabsContent>
+    </Tabs>
         )}
       </div>
     </div>

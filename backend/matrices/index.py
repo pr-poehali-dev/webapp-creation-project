@@ -96,11 +96,13 @@ def handler(event: dict, context) -> dict:
             elif action == 'get':
                 matrix_id = body.get('matrix_id')
                 return handle_get(payload, matrix_id)
+            elif action == 'get_delete_stats':
+                return handle_get_delete_stats(payload, body)
             else:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Invalid action. Use: create, update, delete, update_axis_names, or get'}),
+                    'body': json.dumps({'error': 'Invalid action. Use: create, update, delete, delete_permanently, update_axis_names, get, or get_delete_stats'}),
                     'isBase64Encoded': False
                 }
         else:
@@ -670,7 +672,29 @@ def handle_delete_permanently(payload: dict, body: dict) -> dict:
                 'isBase64Encoded': False
             }
         
+        # Каскадное удаление в правильном порядке
+        
+        # 1. Удаляем статусы критериев
+        cur.execute(
+            "DELETE FROM criterion_statuses WHERE criterion_id IN (SELECT id FROM matrix_criteria WHERE matrix_id = %s)" % matrix_id
+        )
+        deleted_statuses = cur.rowcount
+        
+        # 2. Удаляем критерии матрицы
+        cur.execute(
+            "DELETE FROM matrix_criteria WHERE matrix_id = %s" % matrix_id
+        )
+        deleted_criteria = cur.rowcount
+        
+        # 3. Отвязываем клиентов от матрицы (НЕ удаляем их!)
+        cur.execute(
+            "UPDATE clients SET matrix_id = NULL, score_x = 0, score_y = 0, quadrant = NULL WHERE matrix_id = %s" % matrix_id
+        )
+        unlinked_clients = cur.rowcount
+        
+        # 4. Удаляем саму матрицу
         cur.execute("DELETE FROM matrices WHERE id = %s" % matrix_id)
+        
         conn.commit()
         
         return {
@@ -678,7 +702,87 @@ def handle_delete_permanently(payload: dict, body: dict) -> dict:
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
             'body': json.dumps({
                 'success': True,
-                'message': 'Матрица удалена навсегда'
+                'message': 'Матрица удалена навсегда',
+                'deleted_criteria': deleted_criteria,
+                'deleted_statuses': deleted_statuses,
+                'unlinked_clients': unlinked_clients
+            }),
+            'isBase64Encoded': False
+        }
+    
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_get_delete_stats(payload: dict, body: dict) -> dict:
+    """Получить статистику для предупреждения перед удалением матрицы"""
+    if payload['role'] not in ['owner', 'admin']:
+        return {
+            'statusCode': 403,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Only owner and admin can view delete statistics'}),
+            'isBase64Encoded': False
+        }
+    
+    matrix_id = body.get('matrix_id')
+    
+    if not matrix_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'matrix_id is required'}),
+            'isBase64Encoded': False
+        }
+    
+    organization_id = payload['organization_id']
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        # Проверка принадлежности матрицы организации
+        cur.execute(
+            "SELECT name FROM matrices WHERE id = %s AND organization_id = %s" % (matrix_id, organization_id)
+        )
+        result = cur.fetchone()
+        
+        if not result:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Matrix not found'}),
+                'isBase64Encoded': False
+            }
+        
+        matrix_name = result[0]
+        
+        # Подсчёт критериев
+        cur.execute(
+            "SELECT COUNT(*) FROM matrix_criteria WHERE matrix_id = %s" % matrix_id
+        )
+        criteria_count = cur.fetchone()[0]
+        
+        # Подсчёт статусов критериев
+        cur.execute(
+            "SELECT COUNT(*) FROM criterion_statuses WHERE criterion_id IN (SELECT id FROM matrix_criteria WHERE matrix_id = %s)" % matrix_id
+        )
+        statuses_count = cur.fetchone()[0]
+        
+        # Подсчёт клиентов
+        cur.execute(
+            "SELECT COUNT(*) FROM clients WHERE matrix_id = %s" % matrix_id
+        )
+        clients_count = cur.fetchone()[0]
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'matrix_name': matrix_name,
+                'criteria_count': criteria_count,
+                'statuses_count': statuses_count,
+                'clients_count': clients_count
             }),
             'isBase64Encoded': False
         }

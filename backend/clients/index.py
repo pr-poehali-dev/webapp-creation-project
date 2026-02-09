@@ -432,6 +432,46 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
+        elif action == 'list_unrated':
+            cur.execute("""
+                SELECT c.id, c.company_name, c.contact_person, c.email, c.phone,
+                       c.description, c.created_at, c.deal_status_id,
+                       ds.name as deal_status_name, ds.weight as deal_status_weight
+                FROM clients c
+                LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
+                WHERE c.organization_id = %s AND c.is_active = true AND c.matrix_id IS NULL
+                ORDER BY c.created_at DESC
+            """, (organization_id,))
+            
+            rows = cur.fetchall()
+            
+            clients = []
+            for row in rows:
+                clients.append({
+                    'id': row[0],
+                    'company_name': row[1],
+                    'contact_person': row[2],
+                    'email': row[3],
+                    'phone': row[4],
+                    'description': row[5],
+                    'created_at': row[6].isoformat() if row[6] else None,
+                    'deal_status_id': row[7],
+                    'deal_status_name': row[8],
+                    'deal_status_weight': row[9],
+                    'matrix_id': None,
+                    'matrix_name': None,
+                    'score_x': 0,
+                    'score_y': 0,
+                    'quadrant': None
+                })
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'clients': clients, 'count': len(clients)}),
+                'isBase64Encoded': False
+            }
+        
         else:
             return {
                 'statusCode': 400,
