@@ -129,12 +129,11 @@ def get_user_from_token(token: str):
 def list_templates(conn, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, description, 
-                   CASE WHEN organization_id IS NULL THEN TRUE ELSE FALSE END as is_system
+            SELECT id, name, description, is_system
             FROM matrices
             WHERE is_template = TRUE 
-              AND (organization_id IS NULL OR organization_id = %s)
-            ORDER BY (organization_id IS NULL) DESC, name
+              AND (is_system = TRUE OR organization_id = %s)
+            ORDER BY is_system DESC, name
         ''', (organization_id,))
         templates = cur.fetchall()
         return {'templates': [dict(t) for t in templates]}
@@ -143,13 +142,12 @@ def list_templates(conn, organization_id: int):
 def get_template_details(conn, template_id: int, organization_id: int):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute('''
-            SELECT id, name, description, 
-                   CASE WHEN organization_id IS NULL THEN TRUE ELSE FALSE END as is_system,
+            SELECT id, name, description, is_system,
                    axis_x_name, axis_y_name
             FROM matrices
             WHERE id = %s 
               AND is_template = TRUE
-              AND (organization_id IS NULL OR organization_id = %s)
+              AND (is_system = TRUE OR organization_id = %s)
         ''', (template_id, organization_id))
         template = cur.fetchone()
         
