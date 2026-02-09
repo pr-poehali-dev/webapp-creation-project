@@ -58,10 +58,15 @@ const Clients = () => {
       return;
     }
 
-    fetchClients();
     checkMatrices();
     fetchDealStatuses();
-  }, [navigate, filterQuadrant, filterDealStatus, filterMatrix]);
+  }, [navigate]);
+
+  useEffect(() => {
+    if (filterMatrix) {
+      fetchClients();
+    }
+  }, [filterQuadrant, filterDealStatus, filterMatrix]);
 
   const checkMatrices = async () => {
     try {
@@ -77,7 +82,7 @@ const Clients = () => {
       if (response.ok) {
         setMatrices(data.matrices || []);
         setHasMatrices(data.matrices && data.matrices.length > 0);
-        if (data.matrices && data.matrices.length > 0) {
+        if (data.matrices && data.matrices.length > 0 && !filterMatrix) {
           setFilterMatrix(data.matrices[0].id.toString());
         }
       }

@@ -20,7 +20,8 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
     
-    token = event.get('headers', {}).get('X-Authorization', '').replace('Bearer ', '')
+    auth_header = event.get('headers', {}).get('X-Authorization', '')
+    token = auth_header.replace('Bearer ', '') if auth_header else ''
     if not token:
         return {
             'statusCode': 401,

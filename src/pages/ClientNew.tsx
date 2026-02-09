@@ -95,29 +95,29 @@ const ClientNew = () => {
     }
   };
 
-  const fetchMatrixCriteria = async (matrixId: string) => {
+  const fetchMatrixCriteria = async (matrixId: string): Promise<boolean> => {
     setLoading(true);
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
-        method: 'POST',
+      const response = await fetch(`https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc?id=${matrixId}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ action: 'get', matrix_id: parseInt(matrixId) }),
       });
 
       const data = await response.json();
-      if (response.ok && data.matrix && data.matrix.criteria) {
+      if (response.ok && data.matrix && data.matrix.criteria && data.matrix.criteria.length > 0) {
         setCriteria(data.matrix.criteria);
+        return true;
       } else {
         throw new Error(data.error || 'Не удалось загрузить критерии матрицы');
       }
     } catch (error) {
       console.error('Ошибка загрузки критериев:', error);
       setError(error instanceof Error ? error.message : 'Ошибка загрузки критериев');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -154,8 +154,10 @@ const ClientNew = () => {
   const handleStartQuestionnaire = async () => {
     const matrixId = wizardData.matrix_id || matrices[0]?.id.toString();
     if (matrixId) {
-      await fetchMatrixCriteria(matrixId);
-      setCurrentStep('questionnaire');
+      const success = await fetchMatrixCriteria(matrixId);
+      if (success) {
+        setCurrentStep('questionnaire');
+      }
     }
   };
 
