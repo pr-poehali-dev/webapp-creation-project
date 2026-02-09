@@ -18,15 +18,15 @@ interface OrganizationSettingsFormProps {
 
 const OrganizationSettingsForm = ({ orgForm, setOrgForm, onSubmit, loading }: OrganizationSettingsFormProps) => {
   return (
-    <Card className="p-4 sm:p-6">
-      <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-        <Icon name="Building2" className="w-5 h-5 sm:w-6 sm:h-6" />
+    <Card className="p-6">
+      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+        <Icon name="Building2" size={24} />
         Настройки организации
       </h2>
 
-      <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label htmlFor="org_name" className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+          <label htmlFor="org_name" className="block text-sm font-medium mb-2">
             Название организации <span className="text-destructive">*</span>
           </label>
           <input
@@ -35,14 +35,14 @@ const OrganizationSettingsForm = ({ orgForm, setOrgForm, onSubmit, loading }: Or
             required
             value={orgForm.name}
             onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="ООО «Технологии»"
           />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="contact_email" className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+            <label htmlFor="contact_email" className="block text-sm font-medium mb-2">
               Контактный Email
             </label>
             <input
@@ -50,13 +50,13 @@ const OrganizationSettingsForm = ({ orgForm, setOrgForm, onSubmit, loading }: Or
               type="email"
               value={orgForm.contact_email}
               onChange={(e) => setOrgForm({ ...orgForm, contact_email: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="contact@company.ru"
             />
           </div>
 
           <div>
-            <label htmlFor="contact_phone" className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+            <label htmlFor="contact_phone" className="block text-sm font-medium mb-2">
               Контактный телефон
             </label>
             <input
@@ -64,39 +64,39 @@ const OrganizationSettingsForm = ({ orgForm, setOrgForm, onSubmit, loading }: Or
               type="tel"
               value={orgForm.contact_phone}
               onChange={(e) => setOrgForm({ ...orgForm, contact_phone: e.target.value })}
-              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="+7 (999) 123-45-67"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+          <label htmlFor="description" className="block text-sm font-medium mb-2">
             Описание
           </label>
           <textarea
             id="description"
-            rows={2}
+            rows={3}
             value={orgForm.description}
             onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })}
-            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Краткое описание вашей организации..."
           />
         </div>
 
         <Button
           type="submit"
-          className="gradient-primary text-sm sm:text-base h-9 sm:h-10"
+          className="gradient-primary"
           disabled={loading}
         >
           {loading ? (
             <>
-              <Icon name="Loader2" className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
+              <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
               Сохранение...
             </>
           ) : (
             <>
-              <Icon name="Save" className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <Icon name="Save" size={20} className="mr-2" />
               Сохранить настройки
             </>
           )}

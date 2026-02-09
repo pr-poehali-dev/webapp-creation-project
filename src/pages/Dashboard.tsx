@@ -231,33 +231,33 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-3 sm:px-6 py-6 sm:py-8">
-        <div className="w-full max-w-5xl">
-          <div className="mb-6 sm:mb-8 text-center">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8 sm:mb-12 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
               Добро пожаловать, {user.full_name}!
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Выберите раздел для работы
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {visibleTiles.map((tile) => (
               <Card
                 key={tile.id}
-                className={`p-3 sm:p-4 md:p-5 cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${tile.gradient} border-2 active:scale-95`}
+                className={`p-4 sm:p-6 cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${tile.gradient} border-2 active:scale-95`}
                 onClick={() => navigate(tile.route)}
               >
-                <div className="flex flex-col items-center text-center gap-2 sm:gap-3">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl ${tile.iconColor} bg-background/50 flex items-center justify-center backdrop-blur-sm`}>
-                    <Icon name={tile.icon} className={`w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 ${tile.iconColor}`} />
+                <div className="flex flex-col items-center text-center gap-3 sm:gap-4">
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl ${tile.iconColor} bg-background/50 flex items-center justify-center backdrop-blur-sm`}>
+                    <Icon name={tile.icon} size={window.innerWidth < 640 ? 24 : 32} className={tile.iconColor} />
                   </div>
                   
                   {tile.count !== undefined && (
-                    <div className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+                    <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
                       {loading ? (
-                        <Icon name="Loader2" className="w-5 h-5 animate-spin text-muted-foreground" />
+                        <Icon name="Loader2" size={24} className="animate-spin text-muted-foreground" />
                       ) : (
                         tile.count
                       )}
@@ -265,8 +265,8 @@ const Dashboard = () => {
                   )}
                   
                   <div>
-                    <h3 className="text-xs sm:text-sm md:text-base font-bold mb-0.5">{tile.title}</h3>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block leading-tight">
+                    <h3 className="text-base sm:text-lg font-bold mb-1">{tile.title}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                       {tile.description}
                     </p>
                   </div>

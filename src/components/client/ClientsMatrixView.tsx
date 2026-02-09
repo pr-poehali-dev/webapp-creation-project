@@ -34,6 +34,9 @@ interface ClientsMatrixViewProps {
 }
 
 const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatrixViewProps) => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const MATRIX_SIZE = isMobile ? 280 : 600;
+
   const getQuadrantConfig = (quadrant: string) => {
     switch (quadrant) {
       case 'focus':
@@ -64,30 +67,40 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-180px)] px-3 sm:px-6">
-      <div className="relative w-full max-w-[90vw] sm:max-w-2xl aspect-square">
-        <div className="absolute left-1/2 -translate-x-1/2 -top-6 sm:-top-10 flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-4 sm:gap-8 w-full overflow-x-auto px-2">
+      <div className="relative min-w-fit" style={{ width: MATRIX_SIZE + (isMobile ? 60 : 120), height: MATRIX_SIZE + (isMobile ? 60 : 120) }}>
+        <div 
+          className="absolute left-1/2 -translate-x-1/2 -top-8 sm:-top-12 flex flex-col items-center gap-1 sm:gap-2"
+        >
           <div className="flex flex-col items-center gap-1">
-            <div className="w-0.5 sm:w-1 h-3 sm:h-6 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-l-[4px] sm:border-l-[6px] border-l-transparent border-r-[4px] sm:border-r-[6px] border-r-transparent border-b-[6px] sm:border-b-[10px] border-b-primary"></div>
+            <div className="w-1 h-4 sm:h-8 bg-gradient-to-t from-primary to-primary/40 rounded-full"></div>
+            <div className="w-0 h-0 border-l-[6px] sm:border-l-[8px] border-l-transparent border-r-[6px] sm:border-r-[8px] border-r-transparent border-b-[8px] sm:border-b-[12px] border-b-primary"></div>
           </div>
-          <span className="text-xs sm:text-sm font-bold text-foreground text-center whitespace-nowrap">
+          <span className="text-xs sm:text-base font-bold text-foreground text-center">
             {matrixData?.axis_y_name || 'Ось Y'}
           </span>
         </div>
 
-        <div className="absolute -left-6 sm:-left-10 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        <div 
+          className="absolute -left-8 sm:-left-12 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2"
+        >
           <div className="flex items-center gap-1">
-            <div className="h-0.5 sm:h-1 w-3 sm:w-6 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
-            <div className="w-0 h-0 border-t-[4px] sm:border-t-[6px] border-t-transparent border-b-[4px] sm:border-b-[6px] border-b-transparent border-r-[6px] sm:border-r-[10px] border-r-primary"></div>
+            <div className="h-1 w-4 sm:w-8 bg-gradient-to-l from-primary to-primary/40 rounded-full"></div>
+            <div className="w-0 h-0 border-t-[6px] sm:border-t-[8px] border-t-transparent border-b-[6px] sm:border-b-[8px] border-b-transparent border-r-[8px] sm:border-r-[12px] border-r-primary"></div>
           </div>
-          <span className="text-xs sm:text-sm font-bold text-foreground whitespace-nowrap" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+          <span 
+            className="text-xs sm:text-base font-bold text-foreground"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
             {matrixData?.axis_x_name || 'Ось X'}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 grid-rows-2 gap-0 relative w-[calc(100%-40px)] sm:w-[calc(100%-80px)] h-[calc(100%-40px)] sm:h-[calc(100%-80px)] m-[20px] sm:m-[40px]">
-          {quadrants.map(({ key }) => {
+        <div 
+          className="grid grid-cols-2 grid-rows-2 gap-0 relative"
+          style={{ width: MATRIX_SIZE, height: MATRIX_SIZE, margin: isMobile ? '30px' : '60px' }}
+        >
+          {quadrants.map(({ key, position }) => {
             const config = getQuadrantConfig(key);
             const count = quadrantCounts[key as keyof typeof quadrantCounts];
             
@@ -95,16 +108,25 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
               <button
                 key={key}
                 onClick={() => onQuadrantClick(key)}
-                className={`relative border-2 ${config.borderColor} ${config.color} transition-all duration-300 cursor-pointer flex flex-col items-center justify-center group`}
+                className={`
+                  relative border-2 ${config.borderColor} ${config.color}
+                  transition-all duration-300 cursor-pointer
+                  flex flex-col items-center justify-center
+                  group
+                `}
+                style={{
+                  width: MATRIX_SIZE / 2,
+                  height: MATRIX_SIZE / 2,
+                }}
               >
-                <div className="flex flex-col items-center gap-1 sm:gap-3">
+                <div className="flex flex-col items-center gap-2 sm:gap-4">
                   <div className={`${config.iconColor} transition-transform group-hover:scale-110`}>
-                    <Icon name={config.icon} className="w-6 h-6 sm:w-10 sm:h-10" />
+                    <Icon name={config.icon} size={isMobile ? 24 : 48} />
                   </div>
-                  <div className="text-2xl sm:text-5xl font-bold text-foreground group-hover:scale-110 transition-transform">
+                  <div className="text-3xl sm:text-6xl font-bold text-foreground group-hover:scale-125 transition-transform">
                     {count}
                   </div>
-                  <div className="text-[9px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider text-center px-1">
+                  <div className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider text-center px-1">
                     {config.label}
                   </div>
                 </div>
@@ -112,8 +134,14 @@ const ClientsMatrixView = ({ clients, matrixData, onQuadrantClick }: ClientsMatr
             );
           })}
 
-          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 sm:w-1 bg-border -translate-x-1/2" style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}></div>
-          <div className="absolute top-1/2 left-0 right-0 h-0.5 sm:h-1 bg-border -translate-y-1/2" style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}></div>
+          <div 
+            className="absolute left-1/2 top-0 bottom-0 w-1 bg-border -translate-x-1/2"
+            style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
+          ></div>
+          <div 
+            className="absolute top-1/2 left-0 right-0 h-1 bg-border -translate-y-1/2"
+            style={{ boxShadow: '0 0 8px rgba(0,0,0,0.1)' }}
+          ></div>
         </div>
       </div>
     </div>
