@@ -174,16 +174,19 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
         matrix_id = cur.fetchone()['id']
         
         cur.execute('''
-            SELECT axis, name, weight, min_value, max_value, hint, sort_order
+            SELECT id, axis, name, weight, min_value, max_value, hint, sort_order
             FROM template_criteria
             WHERE template_id = %s
         ''', (template_id,))
         template_criteria = cur.fetchall()
         
+        criterion_id_mapping = {}
+        
         for criterion in template_criteria:
             cur.execute('''
                 INSERT INTO matrix_criteria (matrix_id, axis, name, description, weight, min_value, max_value, sort_order)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
             ''', (
                 matrix_id,
                 criterion['axis'],
@@ -194,6 +197,22 @@ def create_matrix_from_template(conn, template_id: int, matrix_name: str, matrix
                 criterion['max_value'],
                 criterion['sort_order']
             ))
+            new_criterion_id = cur.fetchone()['id']
+            criterion_id_mapping[criterion['id']] = new_criterion_id
+        
+        cur.execute('''
+            SELECT template_criterion_id, label, weight, sort_order
+            FROM template_criterion_statuses
+            WHERE template_criterion_id IN %s
+        ''', (tuple(criterion_id_mapping.keys()),))
+        template_statuses = cur.fetchall()
+        
+        for status in template_statuses:
+            new_criterion_id = criterion_id_mapping[status['template_criterion_id']]
+            cur.execute('''
+                INSERT INTO criterion_statuses (criterion_id, label, weight, sort_order)
+                VALUES (%s, %s, %s, %s)
+            ''', (new_criterion_id, status['label'], status['weight'], status['sort_order']))
         
         conn.commit()
         return {'matrix_id': matrix_id, 'message': 'Матрица создана из шаблона'}
