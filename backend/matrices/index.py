@@ -93,6 +93,8 @@ def handler(event: dict, context) -> dict:
                 return handle_delete_permanently(payload, body)
             elif action == 'update_axis_names':
                 return handle_update_axis_names(payload, body)
+            elif action == 'update_quadrant_rules':
+                return handle_update_quadrant_rules(payload, body)
             elif action == 'get':
                 matrix_id = body.get('matrix_id')
                 return handle_get(payload, matrix_id)
@@ -102,7 +104,7 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Invalid action. Use: create, update, delete, delete_permanently, update_axis_names, get, or get_delete_stats'}),
+                    'body': json.dumps({'error': 'Invalid action. Use: create, update, delete, delete_permanently, update_axis_names, update_quadrant_rules, get, or get_delete_stats'}),
                     'isBase64Encoded': False
                 }
         else:
@@ -257,6 +259,28 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
             })
         
         matrix['criteria'] = criteria
+        
+        cur.execute(
+            """
+            SELECT quadrant, x_min, y_min, x_operator, priority
+            FROM matrix_quadrant_rules
+            WHERE matrix_id = %s
+            ORDER BY priority
+            """,
+            (matrix_id,)
+        )
+        
+        quadrant_rules = []
+        for row in cur.fetchall():
+            quadrant_rules.append({
+                'quadrant': row[0],
+                'x_min': float(row[1]),
+                'y_min': float(row[2]),
+                'x_operator': row[3],
+                'priority': row[4]
+            })
+        
+        matrix['quadrant_rules'] = quadrant_rules
         
         return {
             'statusCode': 200,
@@ -717,6 +741,92 @@ def handle_delete_permanently(payload: dict, body: dict) -> dict:
                 'deleted_criteria': deleted_criteria,
                 'deleted_statuses': deleted_statuses,
                 'unlinked_clients': unlinked_clients
+            }),
+            'isBase64Encoded': False
+        }
+    
+    finally:
+        cur.close()
+        conn.close()
+
+
+def handle_update_quadrant_rules(payload: dict, body: dict) -> dict:
+    """Обновление правил квадрантов матрицы"""
+    if payload['role'] not in ['owner', 'admin', 'manager']:
+        return {
+            'statusCode': 403,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'Permission denied'}),
+            'isBase64Encoded': False
+        }
+    
+    matrix_id = body.get('matrix_id')
+    quadrant_rules = body.get('quadrant_rules', [])
+    
+    if not matrix_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'matrix_id is required'}),
+            'isBase64Encoded': False
+        }
+    
+    if not quadrant_rules or len(quadrant_rules) == 0:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': 'quadrant_rules are required'}),
+            'isBase64Encoded': False
+        }
+    
+    organization_id = payload['organization_id']
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute(
+            "SELECT organization_id FROM matrices WHERE id = %s" % matrix_id
+        )
+        result = cur.fetchone()
+        
+        if not result:
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Matrix not found'}),
+                'isBase64Encoded': False
+            }
+        
+        if result[0] != organization_id:
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'Cannot modify matrix from different organization'}),
+                'isBase64Encoded': False
+            }
+        
+        cur.execute("DELETE FROM matrix_quadrant_rules WHERE matrix_id = %s" % matrix_id)
+        
+        for rule in quadrant_rules:
+            quadrant = rule.get('quadrant', '').replace("'", "''")
+            x_min = rule.get('x_min', 0)
+            y_min = rule.get('y_min', 0)
+            x_operator = rule.get('x_operator', 'AND').replace("'", "''")
+            priority = rule.get('priority', 1)
+            
+            cur.execute(
+                "INSERT INTO matrix_quadrant_rules (matrix_id, quadrant, x_min, y_min, x_operator, priority) VALUES (%s, '%s', %s, %s, '%s', %s)" % (matrix_id, quadrant, x_min, y_min, x_operator, priority)
+            )
+        
+        conn.commit()
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'success': True,
+                'message': 'Quadrant rules updated successfully'
             }),
             'isBase64Encoded': False
         }

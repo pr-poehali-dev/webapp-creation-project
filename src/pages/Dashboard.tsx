@@ -113,12 +113,9 @@ const Dashboard = () => {
           body: JSON.stringify({ action: 'list' }),
         }),
         fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
-          method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: 'list' }),
+          }
         })
       ]);
 

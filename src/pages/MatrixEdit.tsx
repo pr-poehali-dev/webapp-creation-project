@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import MatrixEditBasicInfo from '@/components/matrix/MatrixEditBasicInfo';
 import MatrixEditCriteriaList from '@/components/matrix/MatrixEditCriteriaList';
+import { QuadrantRulesEditor, QuadrantRule } from '@/components/matrix/QuadrantRulesEditor';
 
 interface CriterionStatus {
   label: string;
@@ -33,6 +35,7 @@ interface Matrix {
   created_at: string;
   created_by_name: string;
   criteria: Criterion[];
+  quadrant_rules?: QuadrantRule[];
 }
 
 const MatrixEdit = () => {
@@ -42,8 +45,11 @@ const MatrixEdit = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [criteria, setCriteria] = useState<Criterion[]>([]);
+  const [quadrantRules, setQuadrantRules] = useState<QuadrantRule[]>([]);
+  const [quadrantDialogOpen, setQuadrantDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingQuadrants, setSavingQuadrants] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -69,6 +75,7 @@ const MatrixEdit = () => {
         setName(data.matrix.name);
         setDescription(data.matrix.description || '');
         setCriteria(data.matrix.criteria || []);
+        setQuadrantRules(data.matrix.quadrant_rules || []);
       } else {
         setError('Матрица не найдена');
       }
@@ -199,6 +206,44 @@ const MatrixEdit = () => {
     }
   };
 
+  const handleSaveQuadrantRules = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    setSavingQuadrants(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'update_quadrant_rules',
+          matrix_id: id,
+          quadrant_rules: quadrantRules
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка сохранения правил');
+      }
+
+      toast.success('Правила квадрантов обновлены');
+      setQuadrantDialogOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Ошибка сохранения правил');
+    } finally {
+      setSavingQuadrants(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -303,6 +348,99 @@ const MatrixEdit = () => {
             onUpdateCriterionStatuses={updateCriterionStatuses}
             onRemoveCriterion={removeCriterion}
           />
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold">Правила распределения по квадрантам</h2>
+                <p className="text-sm text-muted-foreground mt-1">Настройте условия для автоматического распределения клиентов</p>
+              </div>
+              <Dialog open={quadrantDialogOpen} onOpenChange={setQuadrantDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Icon name="Settings" size={16} className="mr-2" />
+                    Редактировать
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Редактирование правил квадрантов</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <QuadrantRulesEditor
+                      rules={quadrantRules}
+                      onChange={setQuadrantRules}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button variant="outline" onClick={() => setQuadrantDialogOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button onClick={handleSaveQuadrantRules} disabled={savingQuadrants}>
+                      {savingQuadrants ? (
+                        <>
+                          <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
+                          Сохраняем...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="Save" size={16} className="mr-2" />
+                          Сохранить
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {quadrantRules.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2 border border-border rounded-lg overflow-hidden">
+                {(['monitor', 'focus', 'archive', 'grow'] as const).map((quadrantKey) => {
+                  const rule = quadrantRules.find(r => r.quadrant === quadrantKey);
+                  if (!rule) return null;
+                  
+                  const config = {
+                    focus: { label: 'Фокус', icon: 'Target', color: 'text-green-500' },
+                    monitor: { label: 'Мониторить', icon: 'Eye', color: 'text-blue-500' },
+                    grow: { label: 'Выращивать', icon: 'TrendingUp', color: 'text-yellow-500' },
+                    archive: { label: 'Архив', icon: 'Archive', color: 'text-gray-500' }
+                  }[quadrantKey];
+
+                  return (
+                    <div 
+                      key={quadrantKey}
+                      className="p-4 bg-card flex flex-col items-center justify-center text-center min-h-[100px]"
+                      style={{
+                        borderRight: quadrantKey === 'monitor' || quadrantKey === 'archive' ? '1px solid hsl(var(--border))' : 'none',
+                        borderBottom: quadrantKey === 'monitor' || quadrantKey === 'focus' ? '1px solid hsl(var(--border))' : 'none'
+                      }}
+                    >
+                      <Icon name={config.icon} size={20} className={`${config.color} mb-2`} />
+                      <div className="text-sm font-medium mb-1">{config.label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {quadrantKey === 'archive' ? (
+                          'Остальные'
+                        ) : (
+                          <>
+                            X ≥ {rule.x_min}
+                            <br />
+                            {rule.x_operator === 'AND' ? 'и' : 'или'} Y ≥ {rule.y_min}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Icon name="AlertCircle" size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Правила квадрантов не настроены</p>
+                <p className="text-sm mt-2">Нажмите "Редактировать" для настройки</p>
+              </div>
+            )}
+          </Card>
         </div>
       </main>
     </div>
