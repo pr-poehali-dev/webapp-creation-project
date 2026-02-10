@@ -7,6 +7,7 @@ import jwt
 import base64
 from telegram_api import send_message, send_message_with_buttons, answer_callback_query
 from db_helpers import get_user_by_telegram_id, link_user_telegram, create_support_thread
+from fsm_client import start_client_creation, handle_fsm_message, cancel_client_creation
 
 
 def verify_jwt_token(token: str):
@@ -111,6 +112,14 @@ def handle_start(chat_id: int, telegram_id: int, text: str, username: str = None
 def handle_message(chat_id: int, telegram_id: int, text: str, username: str = None, full_name: str = None) -> dict:
     """Обработка текстовых сообщений"""
     
+    # Проверить FSM сначала
+    if handle_fsm_message(chat_id, telegram_id, text):
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True})
+        }
+    
     user = get_user_by_telegram_id(telegram_id)
     
     # Если пользователь не привязан - создать тред поддержки
@@ -165,8 +174,8 @@ def handle_callback(chat_id: int, telegram_id: int, callback_data: str, message_
                 'body': json.dumps({'ok': True})
             }
         
-        # TODO: Запустить FSM для добавления клиента
-        send_message(chat_id, "📝 Функционал добавления клиента в разработке...")
+        # Запустить FSM для добавления клиента
+        start_client_creation(chat_id, telegram_id, user['id'], user['organization_id'])
         answer_callback_query(telegram_id)
     
     elif callback_data == 'support':
@@ -175,6 +184,10 @@ def handle_callback(chat_id: int, telegram_id: int, callback_data: str, message_
             "💬 Служба поддержки\n\n"
             "Напишите ваш вопрос, и мы ответим в ближайшее время."
         )
+        answer_callback_query(telegram_id)
+    
+    elif callback_data == 'cancel_client':
+        cancel_client_creation(chat_id, telegram_id)
         answer_callback_query(telegram_id)
     
     elif callback_data == 'how_to_link':

@@ -22,7 +22,7 @@ def get_user_by_telegram_id(telegram_id: int) -> Optional[dict]:
             SELECT id, organization_id, username, full_name, role, telegram_id
             FROM users
             WHERE telegram_id = %s AND is_active = true
-            """ % telegram_id
+            """, (telegram_id,)
         )
         result = cur.fetchone()
         
@@ -52,7 +52,7 @@ def link_user_telegram(user_id: int, telegram_id: int, telegram_username: str = 
             UPDATE users 
             SET telegram_id = %s
             WHERE id = %s AND is_active = true
-            """ % (telegram_id, user_id)
+            """, (telegram_id, user_id)
         )
         conn.commit()
         return cur.rowcount > 0
@@ -70,9 +70,9 @@ def create_support_thread(telegram_id: int, username: str = None, full_name: str
         cur.execute(
             """
             INSERT INTO telegram_support_threads (telegram_user_id, telegram_username, full_name, status)
-            VALUES (%s, '%s', '%s', 'open')
+            VALUES (%s, %s, %s, 'open')
             RETURNING id
-            """ % (telegram_id, username or '', full_name or '')
+            """, (telegram_id, username or '', full_name or '')
         )
         thread_id = cur.fetchone()[0]
         conn.commit()
