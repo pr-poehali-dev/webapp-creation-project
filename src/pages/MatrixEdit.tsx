@@ -66,7 +66,19 @@ const MatrixEdit = () => {
         setMatrix(data.matrix);
         setName(data.matrix.name);
         setDescription(data.matrix.description || '');
-        setCriteria(data.matrix.criteria || []);
+        
+        const criteriaWithUniqueStatuses = (data.matrix.criteria || []).map((criterion: Criterion) => {
+          const uniqueStatuses = criterion.statuses.reduce((acc: CriterionStatus[], status: CriterionStatus) => {
+            const exists = acc.find(s => s.label === status.label && s.weight === status.weight);
+            if (!exists) {
+              acc.push(status);
+            }
+            return acc;
+          }, []);
+          return { ...criterion, statuses: uniqueStatuses };
+        });
+        
+        setCriteria(criteriaWithUniqueStatuses);
       } else {
         setError('Матрица не найдена');
       }
@@ -331,7 +343,10 @@ const MatrixEdit = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground">Статусы критерия</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-medium text-muted-foreground">Статусы критерия</label>
+                          <label className="text-xs font-medium text-muted-foreground mr-24">Вес статуса</label>
+                        </div>
                         {criterion.statuses.map((status, statusIdx) => (
                           <div key={statusIdx} className="flex items-center gap-2">
                             <input
@@ -423,7 +438,10 @@ const MatrixEdit = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground">Статусы критерия</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-medium text-muted-foreground">Статусы критерия</label>
+                          <label className="text-xs font-medium text-muted-foreground mr-24">Вес статуса</label>
+                        </div>
                         {criterion.statuses.map((status, statusIdx) => (
                           <div key={statusIdx} className="flex items-center gap-2">
                             <input
