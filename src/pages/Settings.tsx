@@ -62,7 +62,7 @@ const Settings = () => {
     const user = JSON.parse(userData);
     const token = localStorage.getItem('token');
     
-    const deepLink = `https://t.me/your_bot?start=link_${btoa(`${user.id}_${user.organization_id}_${token}`)}`;
+    const deepLink = `https://t.me/techsale_b2b_bot?start=link_${btoa(`${user.id}_${user.organization_id}_${token}`)}`;
     setTelegramLinkUrl(deepLink);
   };
 

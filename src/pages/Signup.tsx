@@ -5,7 +5,7 @@ import Icon from '@/components/ui/icon';
 
 const Signup = () => {
   const handleTelegramBot = () => {
-    window.open('https://t.me/your_bot?start=create_org', '_blank');
+    window.open('https://t.me/techsale_b2b_bot?start=create_org', '_blank');
   };
 
   return (

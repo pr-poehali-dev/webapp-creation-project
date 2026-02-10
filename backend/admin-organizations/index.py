@@ -43,8 +43,8 @@ def get_all_organizations():
                 o.id,
                 o.name,
                 o.subscription_tier,
-                o.subscription_start_date,
-                o.subscription_end_date,
+                CAST(NULL AS DATE) as subscription_start_date,
+                o.subscription_expires_at as subscription_end_date,
                 o.users_limit,
                 o.matrices_limit,
                 o.clients_limit,
@@ -57,8 +57,8 @@ def get_all_organizations():
             LEFT JOIN users u ON u.organization_id = o.id AND u.is_active = true
             LEFT JOIN matrices m ON m.organization_id = o.id
             LEFT JOIN clients c ON c.organization_id = o.id AND c.is_active = true
-            GROUP BY o.id, o.name, o.subscription_tier, o.subscription_start_date, 
-                     o.subscription_end_date, o.users_limit, o.matrices_limit, 
+            GROUP BY o.id, o.name, o.subscription_tier, o.subscription_expires_at,
+                     o.users_limit, o.matrices_limit, 
                      o.clients_limit, o.created_at, o.status
             ORDER BY o.created_at DESC
             """
@@ -149,12 +149,12 @@ def create_organization(data: dict):
         cur.execute(
             """
             INSERT INTO organizations 
-            (name, subscription_tier, subscription_start_date, subscription_end_date,
+            (name, subscription_tier, subscription_expires_at,
              users_limit, matrices_limit, clients_limit, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'active')
+            VALUES (%s, %s, %s, %s, %s, %s, 'active')
             RETURNING id
             """,
-            (name, tier, start_date, end_date, users_limit, matrices_limit, clients_limit)
+            (name, tier, end_date, users_limit, matrices_limit, clients_limit)
         )
         org_id = cur.fetchone()[0]
         print(f"[DEBUG] Organization created with id: {org_id}")
@@ -222,12 +222,8 @@ def update_organization_subscription(org_id: int, data: dict):
             updates.append("subscription_tier = %s")
             params.append(tier)
         
-        if start_date:
-            updates.append("subscription_start_date = %s")
-            params.append(start_date)
-        
         if end_date:
-            updates.append("subscription_end_date = %s")
+            updates.append("subscription_expires_at = %s")
             params.append(end_date)
         
         if users_limit is not None:

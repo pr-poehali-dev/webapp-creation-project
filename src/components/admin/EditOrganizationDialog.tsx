@@ -75,7 +75,6 @@ export default function EditOrganizationDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>
                 <SelectItem value="enterprise">Enterprise</SelectItem>
               </SelectContent>
