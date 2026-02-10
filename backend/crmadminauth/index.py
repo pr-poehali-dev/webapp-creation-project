@@ -28,17 +28,30 @@ def verify_admin_password(username: str, password: str) -> dict:
         result = cur.fetchone()
         
         if not result:
+            print(f"[DEBUG] User not found: {username}")
             return None
         
         admin_id, admin_username, password_hash = result
+        print(f"[DEBUG] Found user: {admin_username}, hash type: {type(password_hash)}")
         
-        # Проверить пароль
-        if bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
+        # Проверить пароль - хеш из базы уже строка, конвертируем в bytes
+        password_bytes = password.encode('utf-8')
+        hash_bytes = password_hash.encode('utf-8') if isinstance(password_hash, str) else password_hash
+        
+        print(f"[DEBUG] Password length: {len(password)}, Hash length: {len(hash_bytes)}")
+        
+        if bcrypt.checkpw(password_bytes, hash_bytes):
+            print(f"[DEBUG] Password verified successfully for {admin_username}")
             return {
                 'id': admin_id,
                 'username': admin_username
             }
         
+        print(f"[DEBUG] Password verification failed for {admin_username}")
+        return None
+        
+    except Exception as e:
+        print(f"[ERROR] verify_admin_password exception: {e}")
         return None
         
     finally:
