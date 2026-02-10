@@ -135,6 +135,9 @@ const ClientEdit = () => {
 
       const data = await response.json();
       if (response.ok) {
+        console.log('Client data from backend:', data.client);
+        console.log('Responsible user ID:', data.client.responsible_user_id);
+        console.log('Responsible user name:', data.client.responsible_user_name);
         setClient(data.client);
         setFormData({
           company_name: data.client.company_name,
@@ -209,6 +212,7 @@ const ClientEdit = () => {
 
       const data = await response.json();
       if (response.ok) {
+        console.log('Users from backend:', data.users);
         setUsers(data.users);
       }
     } catch (error) {
