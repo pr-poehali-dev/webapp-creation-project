@@ -19,7 +19,8 @@ def handler(event: dict, context) -> dict:
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, X-Authorization'
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Authorization',
+                'Access-Control-Max-Age': '86400'
             },
             'body': '',
             'isBase64Encoded': False
@@ -227,8 +228,23 @@ def preview_import(organization_id: int, body: dict) -> dict:
             'isBase64Encoded': False
         }
     
+    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+    cur = conn.cursor()
+    
+    cur.execute("""
+        SELECT LOWER(company_name) FROM clients 
+        WHERE organization_id = {org_id} 
+        AND is_active = true 
+        AND deleted_at IS NULL
+    """.format(org_id=organization_id))
+    
+    existing_companies = {row[0] for row in cur.fetchall()}
+    cur.close()
+    conn.close()
+    
     preview_clients = []
     new_criteria = set()
+    duplicates_count = 0
     
     for row in rows[:10]:
         client = {}
@@ -251,8 +267,17 @@ def preview_import(organization_id: int, body: dict) -> dict:
                     custom_scores[criterion_name] = 0.0
         
         if client.get('company_name'):
+            is_duplicate = client['company_name'].lower() in existing_companies
+            if is_duplicate:
+                duplicates_count += 1
             client['custom_scores'] = custom_scores
+            client['is_duplicate'] = is_duplicate
             preview_clients.append(client)
+    
+    total_duplicates = sum(1 for row in rows if any(
+        mapping.get(col) == 'company_name' and row.get(col, '').lower() in existing_companies 
+        for col in row.keys()
+    ))
     
     return {
         'statusCode': 200,
@@ -261,7 +286,8 @@ def preview_import(organization_id: int, body: dict) -> dict:
             'preview': preview_clients,
             'total': len(rows),
             'new_criteria': list(new_criteria),
-            'valid_count': len([r for r in rows if mapping and any(r.get(k) for k in mapping.keys())])
+            'valid_count': len([r for r in rows if mapping and any(r.get(k) for k in mapping.keys())]),
+            'duplicates_count': total_duplicates
         }),
         'isBase64Encoded': False
     }
@@ -350,20 +376,36 @@ def import_clients(organization_id: int, user_id: int, body: dict) -> dict:
             skipped_count += 1
             continue
         
+        company_name = client_data.get('company_name', '').replace("'", "''")
+        
+        cur.execute("""
+            SELECT id FROM clients 
+            WHERE organization_id = {org_id} 
+            AND company_name = '{company}' 
+            AND is_active = true 
+            AND deleted_at IS NULL
+        """.format(org_id=organization_id, company=company_name))
+        
+        existing_client = cur.fetchone()
+        if existing_client:
+            skipped_count += 1
+            continue
+        
         try:
             cur.execute("""
                 INSERT INTO clients 
-                (organization_id, matrix_id, company_name, contact_person, email, phone, description, score_x, score_y, quadrant, created_at)
-                VALUES ({org_id}, {matrix_id}, '{company}', '{contact}', '{email}', '{phone}', '{desc}', 0.0, 0.0, 'archive', NOW())
+                (organization_id, matrix_id, company_name, contact_person, email, phone, description, score_x, score_y, quadrant, created_by, responsible_user_id, created_at)
+                VALUES ({org_id}, {matrix_id}, '{company}', '{contact}', '{email}', '{phone}', '{desc}', 0.0, 0.0, 'archive', {user_id}, {user_id}, NOW())
                 RETURNING id
             """.format(
                 org_id=organization_id,
                 matrix_id=matrix_id,
-                company=client_data.get('company_name', '').replace("'", "''"),
+                company=company_name,
                 contact=client_data.get('contact_person', '').replace("'", "''"),
                 email=client_data.get('email', '').replace("'", "''"),
                 phone=client_data.get('phone', '').replace("'", "''"),
-                desc=client_data.get('description', '').replace("'", "''")
+                desc=client_data.get('description', '').replace("'", "''"),
+                user_id=user_id
             ))
             
             client_id = cur.fetchone()[0]

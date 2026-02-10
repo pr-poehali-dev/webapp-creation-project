@@ -43,6 +43,7 @@ const Import = () => {
   const [previewClients, setPreviewClients] = useState<any[]>([]);
   const [newCriteria, setNewCriteria] = useState<string[]>([]);
   const [validCount, setValidCount] = useState(0);
+  const [duplicatesCount, setDuplicatesCount] = useState(0);
   
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
@@ -63,12 +64,10 @@ const Import = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(MATRICES_FUNCTION_URL, {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ action: 'list' }),
       });
 
       const data = await response.json();
@@ -199,6 +198,7 @@ const Import = () => {
       setPreviewClients(data.preview);
       setNewCriteria(data.new_criteria);
       setValidCount(data.valid_count);
+      setDuplicatesCount(data.duplicates_count || 0);
       setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка превью');
@@ -376,6 +376,7 @@ const Import = () => {
             newCriteria={newCriteria}
             previewClients={previewClients}
             validCount={validCount}
+            duplicatesCount={duplicatesCount}
             setStep={setStep}
             executeImport={executeImport}
             loading={loading}

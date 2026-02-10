@@ -15,6 +15,7 @@ interface ImportStepThreeProps {
   newCriteria: string[];
   previewClients: any[];
   validCount: number;
+  duplicatesCount: number;
   setStep: (step: 2) => void;
   executeImport: () => void;
   loading: boolean;
@@ -28,6 +29,7 @@ const ImportStepThree = ({
   newCriteria,
   previewClients,
   validCount,
+  duplicatesCount,
   setStep,
   executeImport,
   loading,
@@ -41,6 +43,11 @@ const ImportStepThree = ({
             <h2 className="text-2xl font-bold">Этап 3: Превью и импорт</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Будет импортировано {validCount} клиентов
+              {duplicatesCount > 0 && (
+                <span className="text-orange-500 ml-2">
+                  ({duplicatesCount} дубликатов будут пропущены)
+                </span>
+              )}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setStep(2)}>
@@ -102,8 +109,15 @@ const ImportStepThree = ({
             </thead>
             <tbody>
               {previewClients.map((client, idx) => (
-                <tr key={idx} className="border-b border-border hover:bg-muted/50">
-                  <td className="px-4 py-2 font-medium">{client.company_name}</td>
+                <tr key={idx} className={`border-b border-border hover:bg-muted/50 ${client.is_duplicate ? 'bg-orange-500/10' : ''}`}>
+                  <td className="px-4 py-2 font-medium">
+                    {client.company_name}
+                    {client.is_duplicate && (
+                      <Badge variant="outline" className="ml-2 text-xs text-orange-500 border-orange-500">
+                        Дубликат
+                      </Badge>
+                    )}
+                  </td>
                   <td className="px-4 py-2">{client.contact_person || '-'}</td>
                   <td className="px-4 py-2">{client.email || '-'}</td>
                   <td className="px-4 py-2">{client.phone || '-'}</td>
