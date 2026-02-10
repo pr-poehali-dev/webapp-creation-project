@@ -90,6 +90,16 @@ def get_all_organizations():
         conn.close()
 
 
+def get_tier_limits(tier: str) -> dict:
+    """Получить лимиты по тарифу"""
+    tier_limits = {
+        'free': {'users_limit': 3, 'matrices_limit': 1, 'clients_limit': 10},
+        'pro': {'users_limit': 10, 'matrices_limit': 3, 'clients_limit': 500},
+        'enterprise': {'users_limit': 100, 'matrices_limit': 50, 'clients_limit': 10000}
+    }
+    return tier_limits.get(tier, tier_limits['free'])
+
+
 def generate_password(length=12):
     """Сгенерировать случайный пароль"""
     chars = string.ascii_letters + string.digits
@@ -102,29 +112,40 @@ def create_organization(data: dict):
     cur = conn.cursor()
     
     try:
+        print(f"[DEBUG] create_organization called with data: {data}")
+        
         name = data.get('name', '').strip()
         owner_username = data.get('owner_username', '').strip()
         owner_password = data.get('owner_password', '').strip()
         tier = data.get('subscription_tier', 'free')
         start_date = data.get('subscription_start_date')
         end_date = data.get('subscription_end_date')
-        users_limit = data.get('users_limit', 3)
-        matrices_limit = data.get('matrices_limit', 1)
-        clients_limit = data.get('clients_limit', 10)
+        
+        # Автоматически установить лимиты по тарифу, если не указаны явно
+        tier_limits = get_tier_limits(tier)
+        users_limit = data.get('users_limit') or tier_limits['users_limit']
+        matrices_limit = data.get('matrices_limit') or tier_limits['matrices_limit']
+        clients_limit = data.get('clients_limit') or tier_limits['clients_limit']
+        
+        print(f"[DEBUG] Tier: {tier}, Limits: users={users_limit}, matrices={matrices_limit}, clients={clients_limit}")
         
         if not name or not owner_username:
+            print(f"[DEBUG] Validation failed: name='{name}', username='{owner_username}'")
             return {'error': 'Name and owner username required'}
         
         # Если пароль не указан, генерируем автоматически
         if not owner_password:
             owner_password = generate_password()
+            print(f"[DEBUG] Generated password: {owner_password}")
         
         # Проверить, что username свободен
         cur.execute("SELECT id FROM users WHERE username = %s", (owner_username,))
         if cur.fetchone():
+            print(f"[DEBUG] Username already exists: {owner_username}")
             return {'error': 'Username already exists'}
         
         # Создать организацию
+        print(f"[DEBUG] Creating organization: {name}")
         cur.execute(
             """
             INSERT INTO organizations 
@@ -136,9 +157,11 @@ def create_organization(data: dict):
             (name, tier, start_date, end_date, users_limit, matrices_limit, clients_limit)
         )
         org_id = cur.fetchone()[0]
+        print(f"[DEBUG] Organization created with id: {org_id}")
         
         # Создать owner пользователя
         password_hash = bcrypt.hashpw(owner_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        print(f"[DEBUG] Creating owner user: {owner_username}")
         
         cur.execute(
             """
@@ -150,8 +173,10 @@ def create_organization(data: dict):
             (owner_username, password_hash, org_id)
         )
         user_id = cur.fetchone()[0]
+        print(f"[DEBUG] User created with id: {user_id}")
         
         conn.commit()
+        print(f"[DEBUG] Transaction committed successfully")
         
         return {
             'success': True,
@@ -160,6 +185,11 @@ def create_organization(data: dict):
             'username': owner_username,
             'password': owner_password
         }
+    except Exception as e:
+        print(f"[ERROR] create_organization exception: {e}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return {'error': str(e)}
         
     finally:
         cur.close()

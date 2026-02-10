@@ -112,8 +112,8 @@ def update_admin_password(admin_id: int, current_password: str, new_password: st
 def handler(event: dict, context) -> dict:
     """
     Управление настройками администратора.
-    PUT /admin-settings/username - изменить логин
-    PUT /admin-settings/password - изменить пароль
+    PUT /admin-settings?action=username - изменить логин
+    PUT /admin-settings?action=password - изменить пароль
     """
     method = event.get('httpMethod', 'PUT')
     
@@ -151,9 +151,9 @@ def handler(event: dict, context) -> dict:
         admin_id = admin.get('admin_id')
         body = json.loads(event.get('body', '{}'))
         
-        # Определить действие по pathParams
-        path_params = event.get('pathParams', {})
-        action = path_params.get('action', '')
+        # Определить действие по query параметру
+        query_params = event.get('queryStringParameters', {}) or {}
+        action = query_params.get('action', '')
         
         if action == 'username':
             # Изменить логин
@@ -170,7 +170,7 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 400,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Invalid action. Use /username or /password'})
+                'body': json.dumps({'error': 'Invalid action. Use ?action=username or ?action=password'})
             }
         
         if 'error' in result:

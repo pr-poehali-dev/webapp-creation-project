@@ -58,10 +58,19 @@ export default function AdminDashboard() {
     subscription_tier: 'free',
     subscription_start_date: new Date().toISOString().split('T')[0],
     subscription_end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    users_limit: 3,
-    matrices_limit: 1,
-    clients_limit: 10,
+    users_limit: 0,
+    matrices_limit: 0,
+    clients_limit: 0,
   });
+
+  const getTierLimits = (tier: string) => {
+    const limits = {
+      free: { users: 3, matrices: 1, clients: 10 },
+      pro: { users: 10, matrices: 3, clients: 500 },
+      enterprise: { users: 100, matrices: 50, clients: 10000 },
+    };
+    return limits[tier as keyof typeof limits] || limits.free;
+  };
 
   const [settingsForm, setSettingsForm] = useState({
     new_username: '',
@@ -218,7 +227,7 @@ export default function AdminDashboard() {
     if (!settingsForm.new_username) return;
 
     try {
-      const response = await fetch(`${ADMIN_SETTINGS_URL}/username`, {
+      const response = await fetch(`${ADMIN_SETTINGS_URL}?action=username`, {
         method: 'PUT',
         headers: {
           'X-Authorization': `Bearer ${adminToken}`,
@@ -245,7 +254,7 @@ export default function AdminDashboard() {
     if (!settingsForm.current_password || !settingsForm.new_password) return;
 
     try {
-      const response = await fetch(`${ADMIN_SETTINGS_URL}/password`, {
+      const response = await fetch(`${ADMIN_SETTINGS_URL}?action=password`, {
         method: 'PUT',
         headers: {
           'X-Authorization': `Bearer ${adminToken}`,
@@ -620,9 +629,16 @@ export default function AdminDashboard() {
                 <Label>Тариф</Label>
                 <Select
                   value={createForm.subscription_tier}
-                  onValueChange={(value) =>
-                    setCreateForm({ ...createForm, subscription_tier: value })
-                  }
+                  onValueChange={(value) => {
+                    const limits = getTierLimits(value);
+                    setCreateForm({
+                      ...createForm,
+                      subscription_tier: value,
+                      users_limit: limits.users,
+                      matrices_limit: limits.matrices,
+                      clients_limit: limits.clients,
+                    });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
