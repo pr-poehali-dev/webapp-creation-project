@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import ClientEditHeader from '@/components/client/ClientEditHeader';
 import ClientPositionCard from '@/components/client/ClientPositionCard';
 import ClientBasicInfoForm from '@/components/client/ClientBasicInfoForm';
-import QuestionnaireFlow from '@/components/client/wizard/QuestionnaireFlow';
-import { Badge } from '@/components/ui/badge';
+import ClientEditSelectors from '@/components/client/edit/ClientEditSelectors';
+import ClientScoresDisplay from '@/components/client/edit/ClientScoresDisplay';
+import ClientQuestionnaireDialog from '@/components/client/edit/ClientQuestionnaireDialog';
 import AppLayout from '@/components/layout/AppLayout';
 
 interface Matrix {
@@ -207,17 +206,6 @@ const ClientEdit = () => {
     }
   };
 
-  const handleScoreChange = (criterionId: number, value: number) => {
-    const existingScore = scores.find(s => s.criterion_id === criterionId);
-    if (existingScore) {
-      setScores(scores.map(s => 
-        s.criterion_id === criterionId ? { ...s, score: value } : s
-      ));
-    } else {
-      setScores([...scores, { criterion_id: criterionId, score: value, comment: '' }]);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -373,115 +361,22 @@ const ClientEdit = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <ClientBasicInfoForm formData={formData} setFormData={setFormData} />
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <label htmlFor="deal_status_id" className="block text-sm font-medium mb-3">
-                Статус сделки
-              </label>
-              <select
-                id="deal_status_id"
-                value={formData.deal_status_id}
-                onChange={(e) => setFormData({ ...formData, deal_status_id: e.target.value })}
-                className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Не выбран</option>
-                {dealStatuses.map((status) => (
-                  <option key={status.id} value={status.id}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-muted-foreground mt-2">
-                Текущее состояние переговоров с клиентом
-              </p>
-            </div>
+          <ClientEditSelectors
+            dealStatusId={formData.deal_status_id}
+            matrixId={formData.matrix_id}
+            dealStatuses={dealStatuses}
+            matrices={matrices}
+            onDealStatusChange={(value) => setFormData({ ...formData, deal_status_id: value })}
+            onMatrixChange={handleMatrixChange}
+          />
 
-            <div className="bg-card p-6 rounded-lg border border-border">
-              <label htmlFor="matrix_id" className="block text-sm font-medium mb-3">
-                Матрица оценки
-              </label>
-              <select
-                id="matrix_id"
-                value={formData.matrix_id}
-                onChange={(e) => handleMatrixChange(e.target.value)}
-                className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Без матрицы</option>
-                {matrices.map((matrix) => (
-                  <option key={matrix.id} value={matrix.id}>
-                    {matrix.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-muted-foreground mt-2">
-                Выберите матрицу для автоматического определения квадранта
-              </p>
-            </div>
-          </div>
-
-          {formData.matrix_id && scores.length > 0 && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">Текущие оценки</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Клиент оценен по {scores.length} {scores.length === 1 ? 'критерию' : scores.length < 5 ? 'критериям' : 'критериям'}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReassess}
-                >
-                  <Icon name="RefreshCw" size={16} className="mr-2" />
-                  Переоценить
-                </Button>
-              </div>
-
-              <div className="grid gap-3">
-                {scores.map((score) => {
-                  const criterion = criteria.find(c => c.id === score.criterion_id);
-                  if (!criterion) return null;
-                  
-                  const selectedStatus = criterion.statuses.find(s => s.weight === score.score);
-                  
-                  return (
-                    <div key={score.criterion_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{criterion.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {criterion.axis === 'x' ? 'Ось X' : 'Ось Y'}
-                        </div>
-                      </div>
-                      <Badge variant="secondary">
-                        {selectedStatus?.label || `${score.score} баллов`}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          )}
-
-          {formData.matrix_id && scores.length === 0 && (
-            <Card className="p-6">
-              <div className="text-center py-8">
-                <Icon name="ClipboardList" size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">Клиент не оценен</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Пройдите опросник для оценки клиента по выбранной матрице
-                </p>
-                <Button
-                  type="button"
-                  onClick={handleStartQuestionnaire}
-                  className="gradient-primary"
-                >
-                  <Icon name="Play" size={16} className="mr-2" />
-                  Начать оценку
-                </Button>
-              </div>
-            </Card>
-          )}
+          <ClientScoresDisplay
+            matrixId={formData.matrix_id}
+            scores={scores}
+            criteria={criteria}
+            onStartQuestionnaire={handleStartQuestionnaire}
+            onReassess={handleReassess}
+          />
 
           <div className="flex items-center gap-4">
             <Button
@@ -511,23 +406,14 @@ const ClientEdit = () => {
           </div>
         </form>
 
-        <Dialog open={questionnaireOpen} onOpenChange={setQuestionnaireOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {reassessMode ? 'Переоценка клиента' : 'Оценка клиента'}
-              </DialogTitle>
-            </DialogHeader>
-            {criteria.length > 0 && (
-              <QuestionnaireFlow
-                criteria={criteria}
-                initialScores={reassessMode ? scores : []}
-                onComplete={handleQuestionnaireComplete}
-                onBack={() => setQuestionnaireOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <ClientQuestionnaireDialog
+          open={questionnaireOpen}
+          onOpenChange={setQuestionnaireOpen}
+          reassessMode={reassessMode}
+          criteria={criteria}
+          scores={scores}
+          onComplete={handleQuestionnaireComplete}
+        />
       </div>
     </AppLayout>
   );
