@@ -135,7 +135,7 @@ export default function AdminDashboard() {
     if (!selectedOrg) return;
 
     try {
-      const response = await fetch(`${ADMIN_ORGS_URL}/${selectedOrg.id}`, {
+      const response = await fetch(`${ADMIN_ORGS_URL}?id=${selectedOrg.id}`, {
         method: 'PUT',
         headers: {
           'X-Authorization': `Bearer ${adminToken}`,
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
 
   const handleChangeStatus = async (orgId: number, newStatus: string) => {
     try {
-      const response = await fetch(`${ADMIN_ORGS_URL}/${orgId}`, {
+      const response = await fetch(`${ADMIN_ORGS_URL}?id=${orgId}`, {
         method: 'PATCH',
         headers: {
           'X-Authorization': `Bearer ${adminToken}`,

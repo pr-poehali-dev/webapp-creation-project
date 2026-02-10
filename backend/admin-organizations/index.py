@@ -346,9 +346,9 @@ def handler(event: dict, context) -> dict:
         
         # PUT - обновить тариф
         elif method == 'PUT':
-            # Получить ID организации из path params
-            path_params = event.get('pathParams', {})
-            org_id = path_params.get('id')
+            # Получить ID организации из query параметров
+            query_params = event.get('queryStringParameters', {})
+            org_id = query_params.get('id') if query_params else None
             
             if not org_id:
                 return {
@@ -375,8 +375,9 @@ def handler(event: dict, context) -> dict:
         
         # PATCH - изменить статус
         elif method == 'PATCH':
-            path_params = event.get('pathParams', {})
-            org_id = path_params.get('id')
+            # Получить ID организации из query параметров
+            query_params = event.get('queryStringParameters', {})
+            org_id = query_params.get('id') if query_params else None
             
             if not org_id:
                 return {
