@@ -30,7 +30,18 @@ def forward_to_support_channel(
     bot_token = get_bot_token()
     channel_id = get_support_channel_id()
     
-    if not bot_token or not channel_id:
+    print(f"[SUPPORT_FORWARD] Starting forward to channel")
+    print(f"[SUPPORT_FORWARD] Bot token exists: {bool(bot_token)}")
+    print(f"[SUPPORT_FORWARD] Channel ID: {channel_id}")
+    print(f"[SUPPORT_FORWARD] User: {full_name} (@{username}), TG ID: {user_telegram_id}")
+    print(f"[SUPPORT_FORWARD] Thread ID: {thread_id}")
+    
+    if not bot_token:
+        print(f"[SUPPORT_FORWARD] ERROR: Bot token is missing!")
+        return False
+    
+    if not channel_id:
+        print(f"[SUPPORT_FORWARD] ERROR: Channel ID is missing!")
         return False
     
     # Формируем текст сообщения для канала
@@ -58,11 +69,30 @@ def forward_to_support_channel(
         'reply_markup': json.dumps(keyboard)
     }
     
+    print(f"[SUPPORT_FORWARD] Sending request to Telegram API...")
+    
     try:
         response = requests.post(url, json=payload, timeout=10)
-        return response.status_code == 200
+        
+        print(f"[SUPPORT_FORWARD] Response status: {response.status_code}")
+        print(f"[SUPPORT_FORWARD] Response body: {response.text}")
+        
+        if response.status_code == 200:
+            print(f"[SUPPORT_FORWARD] SUCCESS: Message forwarded to channel")
+            return True
+        else:
+            print(f"[SUPPORT_FORWARD] ERROR: Failed with status {response.status_code}")
+            try:
+                error_data = response.json()
+                print(f"[SUPPORT_FORWARD] Error details: {error_data}")
+            except:
+                pass
+            return False
+            
     except Exception as e:
-        print(f"Error forwarding to support channel: {e}")
+        print(f"[SUPPORT_FORWARD] EXCEPTION: {type(e).__name__}: {e}")
+        import traceback
+        print(f"[SUPPORT_FORWARD] Traceback: {traceback.format_exc()}")
         return False
 
 

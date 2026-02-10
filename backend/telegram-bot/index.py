@@ -143,6 +143,26 @@ def handler(event: dict, context) -> dict:
             if 'text' in message and message['text'].startswith('/reply'):
                 return handle_reply_command(chat_id, telegram_id, message['text'])
             
+            # Тестовая команда для проверки пересылки
+            if 'text' in message and message['text'].startswith('/test_support'):
+                from support_channel import forward_to_support_channel
+                from db_helpers import create_support_thread
+                from telegram_api import send_message
+                
+                thread_id = create_support_thread(telegram_id, username, full_name, "Тестовое сообщение от /test_support")
+                success = forward_to_support_channel(telegram_id, username, full_name, "Тестовое сообщение для проверки пересылки в группу", thread_id)
+                
+                if success:
+                    send_message(chat_id, f"✅ Тестовое сообщение отправлено в группу поддержки!\nThread ID: {thread_id}\n\nПроверьте группу.")
+                else:
+                    send_message(chat_id, "❌ Ошибка отправки. Проверьте логи бота.")
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({'ok': True})
+                }
+            
             # Обработка текстовых сообщений
             if 'text' in message:
                 return handle_message(chat_id, telegram_id, message['text'], username, full_name)
