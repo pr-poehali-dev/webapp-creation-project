@@ -1,0 +1,15 @@
+{
+  "tests": [{
+    "name": "Get DB connection info",
+    "method": "GET",
+    "path": "/",
+    "expectedStatus": 200,
+    "expectedBody": {
+      "host": "string",
+      "port": "number",
+      "database": "string",
+      "username": "string"
+    },
+    "bodyMatcher": "partial"
+  }]
+}
