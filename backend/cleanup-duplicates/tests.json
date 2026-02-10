@@ -1,0 +1,12 @@
+{
+  "tests": [{
+    "name": "Cleanup duplicates",
+    "method": "POST",
+    "path": "/",
+    "expectedStatus": 200,
+    "expectedBody": {
+      "success": "boolean"
+    },
+    "bodyMatcher": "partial"
+  }]
+}

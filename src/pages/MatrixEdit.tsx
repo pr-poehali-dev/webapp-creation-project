@@ -68,19 +68,7 @@ const MatrixEdit = () => {
         setMatrix(data.matrix);
         setName(data.matrix.name);
         setDescription(data.matrix.description || '');
-        
-        const criteriaWithUniqueStatuses = (data.matrix.criteria || []).map((criterion: Criterion) => {
-          const uniqueStatuses = criterion.statuses.reduce((acc: CriterionStatus[], status: CriterionStatus) => {
-            const exists = acc.find(s => s.label === status.label && s.weight === status.weight);
-            if (!exists) {
-              acc.push(status);
-            }
-            return acc;
-          }, []);
-          return { ...criterion, statuses: uniqueStatuses };
-        });
-        
-        setCriteria(criteriaWithUniqueStatuses);
+        setCriteria(data.matrix.criteria || []);
       } else {
         setError('Матрица не найдена');
       }
