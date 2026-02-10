@@ -243,7 +243,7 @@ def handler(event: dict, context) -> dict:
             
             if matrix_id and scores:
                 score_x, score_y = calculate_scores(cur, client_id)
-                quadrant = determine_quadrant(score_x, score_y)
+                quadrant = determine_quadrant(cur, matrix_id, score_x, score_y)
                 
                 cur.execute("""
                     UPDATE clients 
@@ -330,8 +330,11 @@ def handler(event: dict, context) -> dict:
                         DO UPDATE SET score = %s, comment = %s, updated_at = CURRENT_TIMESTAMP
                     """, (client_id, criterion_id, score, comment, score, comment))
                 
+                cur.execute("SELECT matrix_id FROM clients WHERE id = %s", (client_id,))
+                client_matrix_id = cur.fetchone()[0]
+                
                 score_x, score_y = calculate_scores(cur, client_id)
-                quadrant = determine_quadrant(score_x, score_y)
+                quadrant = determine_quadrant(cur, client_matrix_id, score_x, score_y) if client_matrix_id else None
                 
                 cur.execute("""
                     UPDATE clients 

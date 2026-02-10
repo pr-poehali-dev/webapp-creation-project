@@ -72,14 +72,6 @@ const QuestionnaireFlow = ({
     }, 300);
   };
 
-  // Автоматически выбираем первый статус для текущего критерия
-  useEffect(() => {
-    if (sortedStatuses.length > 0 && !selectedStatuses.has(currentCriterion.id)) {
-      const firstStatus = sortedStatuses[0];
-      handleStatusSelect(firstStatus.id, firstStatus.weight);
-    }
-  }, [currentIndex, sortedStatuses]);
-
   const handleNext = () => {
     if (currentIndex < criteria.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -150,7 +142,7 @@ const QuestionnaireFlow = ({
                 const isSelected = selectedStatuses.get(currentCriterion.id) === status.id;
                 return (
                   <Card
-                    key={status.id}
+                    key={`${currentCriterion.id}-${status.id}`}
                     onClick={() => handleStatusSelect(status.id, status.weight)}
                     className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-md active:scale-95 ${
                       isSelected 
