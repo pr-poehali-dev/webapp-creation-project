@@ -135,13 +135,33 @@ def handler(event: dict, context) -> dict:
             # Сохранить контакт
             save_telegram_contact(telegram_id, username, full_name)
             
-            # Обработка команды /start
+            # Обработка команд /start, /menu, /help
             if 'text' in message and message['text'].startswith('/start'):
                 return handle_start(chat_id, telegram_id, message['text'], username, full_name)
             
-            # Обработка команды /reply (ответ от админа)
-            if 'text' in message and message['text'].startswith('/reply'):
-                return handle_reply_command(chat_id, telegram_id, message['text'])
+            if 'text' in message and message['text'].startswith('/menu'):
+                return handle_start(chat_id, telegram_id, '/start', username, full_name)
+            
+            if 'text' in message and message['text'].startswith('/help'):
+                from telegram_api import send_message
+                help_text = (
+                    "❓ **Справка по боту**\n\n"
+                    "**Команды:**\n"
+                    "/start - Главное меню\n"
+                    "/menu - Открыть меню\n"
+                    "/help - Эта справка\n\n"
+                    "**Возможности:**\n"
+                    "• Добавление клиентов\n"
+                    "• Оценка по матрице\n"
+                    "• Связь с поддержкой\n\n"
+                    "Для привязки бота к вашему аккаунту зайдите в CRM и нажмите на плитку 'Telegram' на главном дашборде."
+                )
+                send_message(chat_id, help_text)
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({'ok': True})
+                }
             
             # Тестовая команда для проверки пересылки
             if 'text' in message and message['text'].startswith('/test_support'):

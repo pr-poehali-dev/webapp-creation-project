@@ -25,7 +25,6 @@ interface UserPermissions {
 interface Stats {
   total_clients: number;
   total_matrices: number;
-  focus_clients: number;
 }
 
 interface NavTile {
@@ -44,7 +43,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
-  const [stats, setStats] = useState<Stats>({ total_clients: 0, total_matrices: 0, focus_clients: 0 });
+  const [stats, setStats] = useState<Stats>({ total_clients: 0, total_matrices: 0 });
+  const [telegramLinked, setTelegramLinked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -123,14 +123,19 @@ const Dashboard = () => {
       const matricesData = await matricesRes.json();
 
       const totalClients = clientsData.clients?.length || 0;
-      const focusClients = clientsData.clients?.filter((c: { quadrant: string }) => c.quadrant === 'focus').length || 0;
       const totalMatrices = matricesData.matrices?.length || 0;
 
       setStats({
         total_clients: totalClients,
-        total_matrices: totalMatrices,
-        focus_clients: focusClients
+        total_matrices: totalMatrices
       });
+      
+      // Проверить привязку Telegram
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setTelegramLinked(!!user.telegram_id);
+      }
     } catch (error) {
       console.error('Ошибка загрузки статистики:', error);
     } finally {
@@ -170,16 +175,7 @@ const Dashboard = () => {
       count: stats.total_matrices,
       permission: (p) => p.matrix_access !== 'none',
     },
-    {
-      id: 'focus',
-      title: 'В Фокусе',
-      description: 'Приоритетные клиенты',
-      icon: 'Zap',
-      iconColor: 'text-green-500',
-      gradient: 'from-green-500/20 to-green-600/30 hover:from-green-500/30 hover:to-green-600/40',
-      route: '/clients?filter=focus',
-      count: stats.focus_clients,
-    },
+
     {
       id: 'team',
       title: 'Команда',
@@ -209,6 +205,15 @@ const Dashboard = () => {
       gradient: 'from-indigo-500/20 to-indigo-600/30 hover:from-indigo-500/30 hover:to-indigo-600/40',
       route: '/import',
       permission: (p) => p.import_export === 'both',
+    },
+    {
+      id: 'telegram',
+      title: telegramLinked ? 'Telegram привязан!' : 'Telegram',
+      description: telegramLinked ? 'Аккаунт привязан' : 'Привязать бота',
+      icon: telegramLinked ? 'CheckCircle2' : 'MessageCircle',
+      iconColor: telegramLinked ? 'text-green-500' : 'text-blue-500',
+      gradient: telegramLinked ? 'from-green-500/20 to-green-600/30 hover:from-green-500/30 hover:to-green-600/40' : 'from-blue-500/20 to-blue-600/30 hover:from-blue-500/30 hover:to-blue-600/40',
+      route: '/telegram-link',
     },
     {
       id: 'settings',

@@ -5,7 +5,7 @@ import UserPermissionsSection from '@/components/settings/UserPermissionsSection
 import SettingsHeader from '@/components/settings/SettingsHeader';
 import SettingsAlerts from '@/components/settings/SettingsAlerts';
 import DealStatusesTab from '@/components/settings/DealStatusesTab';
-import TelegramTab from '@/components/settings/TelegramTab';
+
 
 interface Organization {
   id: number;
@@ -29,8 +29,7 @@ const Settings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'organization' | 'statuses' | 'permissions' | 'telegram'>('organization');
-  const [telegramLinkUrl, setTelegramLinkUrl] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'organization' | 'statuses' | 'permissions'>('organization');
 
   const [orgForm, setOrgForm] = useState({
     name: '',
@@ -52,19 +51,9 @@ const Settings = () => {
 
     fetchSettings();
     fetchDealStatuses();
-    generateTelegramLink();
   }, [navigate]);
 
-  const generateTelegramLink = () => {
-    const userData = localStorage.getItem('user');
-    if (!userData) return;
 
-    const user = JSON.parse(userData);
-    const token = localStorage.getItem('token');
-    
-    const deepLink = `https://t.me/techsale_b2b_bot?start=link_${btoa(`${user.id}_${user.organization_id}_${token}`)}`;
-    setTelegramLinkUrl(deepLink);
-  };
 
   const fetchSettings = async () => {
     try {
@@ -338,9 +327,7 @@ const Settings = () => {
             />
           )}
 
-          {activeTab === 'telegram' && (
-            <TelegramTab telegramLinkUrl={telegramLinkUrl} />
-          )}
+
         </div>
       </div>
     </div>

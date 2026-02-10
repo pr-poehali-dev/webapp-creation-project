@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 
 interface SettingsHeaderProps {
-  activeTab: 'organization' | 'statuses' | 'permissions' | 'telegram';
-  setActiveTab: (tab: 'organization' | 'statuses' | 'permissions' | 'telegram') => void;
+  activeTab: 'organization' | 'statuses' | 'permissions';
+  setActiveTab: (tab: 'organization' | 'statuses' | 'permissions') => void;
   onBack: () => void;
 }
 
@@ -54,14 +54,7 @@ const SettingsHeader = ({ activeTab, setActiveTab, onBack }: SettingsHeaderProps
             <span className="hidden sm:inline">Права доступа</span>
             <span className="sm:hidden">Права</span>
           </Button>
-          <Button
-            variant={activeTab === 'telegram' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('telegram')}
-            className="rounded-b-none text-xs sm:text-sm px-2 sm:px-4"
-          >
-            <Icon name="Send" size={14} className="sm:mr-2" />
-            <span className="hidden sm:inline">Telegram</span>
-          </Button>
+
         </div>
       </div>
     </>
