@@ -55,12 +55,20 @@ const Clients = () => {
   const [showList, setShowList] = useState(false);
   const [viewMode, setViewMode] = useState<'matrices' | 'unrated'>('matrices');
   const [unratedClients, setUnratedClients] = useState<Client[]>([]);
+  const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    
     if (!token) {
       navigate('/login');
       return;
+    }
+
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUserRole(parsedUser.role || '');
     }
 
     checkMatrices();
@@ -242,10 +250,6 @@ const Clients = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate('/clients/deleted')}>
-                <Icon name="Trash2" size={18} className="sm:mr-2" />
-                <span className="hidden sm:inline">Удаленные</span>
-              </Button>
               {hasMatrices ? (
                 <Link to="/client/new">
                   <Button className="gradient-primary" size="sm">
@@ -275,6 +279,12 @@ const Clients = () => {
               <Icon name="Users" size={16} />
               Без оценки ({unratedClients.length})
             </TabsTrigger>
+            {(userRole === 'owner' || userRole === 'admin') && (
+              <TabsTrigger value="deleted" className="flex items-center gap-2" onClick={() => navigate('/clients/deleted')}>
+                <Icon name="Trash2" size={16} />
+                Удаленные
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="matrices">
