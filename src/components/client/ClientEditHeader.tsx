@@ -11,6 +11,8 @@ interface Client {
 interface ClientEditHeaderProps {
   client: Client | null;
   onDelete: () => void;
+  onSave: () => void;
+  saving: boolean;
 }
 
 const getQuadrantConfig = (quadrant: string) => {
@@ -28,7 +30,7 @@ const getQuadrantConfig = (quadrant: string) => {
   }
 };
 
-const ClientEditHeader = ({ client, onDelete }: ClientEditHeaderProps) => {
+const ClientEditHeader = ({ client, onDelete, onSave, saving }: ClientEditHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -51,10 +53,29 @@ const ClientEditHeader = ({ client, onDelete }: ClientEditHeaderProps) => {
               <p className="text-sm text-muted-foreground">Редактирование информации о клиенте</p>
             </div>
           </div>
-          <Button variant="destructive" onClick={onDelete}>
-            <Icon name="Trash2" size={20} className="mr-2" />
-            Удалить
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              className="gradient-primary" 
+              onClick={onSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                  Сохранение...
+                </>
+              ) : (
+                <>
+                  <Icon name="Save" size={20} className="mr-2" />
+                  Сохранить
+                </>
+              )}
+            </Button>
+            <Button variant="destructive" onClick={onDelete}>
+              <Icon name="Trash2" size={20} className="mr-2" />
+              Удалить
+            </Button>
+          </div>
         </div>
       </div>
     </header>

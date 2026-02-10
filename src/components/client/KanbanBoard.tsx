@@ -42,6 +42,8 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; statusId: number | null; clientId: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const getQuadrantColor = (quadrant: string) => {
     switch (quadrant) {
@@ -112,9 +114,15 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+
     updateScrollState();
     container.addEventListener('scroll', updateScrollState);
-    window.addEventListener('resize', updateScrollState);
+    window.addEventListener('resize', () => {
+      updateScrollState();
+      checkMobile();
+    });
 
     return () => {
       container.removeEventListener('scroll', updateScrollState);
@@ -146,6 +154,33 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
       left: maxScroll * percentage,
       behavior: 'smooth'
     });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, clientId: number, statusId: number | null) => {
+    if (!isMobile) return;
+    const touch = e.touches[0];
+    setTouchStart({
+      x: touch.clientX,
+      y: touch.clientY,
+      statusId,
+      clientId
+    });
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, targetStatusId: number | null) => {
+    if (!touchStart || !isMobile) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = Math.abs(touch.clientX - touchStart.x);
+    const deltaY = Math.abs(touch.clientY - touchStart.y);
+
+    if (deltaX < 10 && deltaY < 10) {
+      onClientClick(touchStart.clientId);
+    } else if (touchStart.statusId !== targetStatusId) {
+      onStatusChange(touchStart.clientId, targetStatusId);
+    }
+
+    setTouchStart(null);
   };
 
   return (
@@ -191,9 +226,10 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
               return (
                 <div
                   key={status.id || 'no-status'}
-                  className="flex-shrink-0 w-80"
+                  className="flex-shrink-0 w-80 md:w-80 w-[85vw]"
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(status.id)}
+                  onTouchEnd={(e) => handleTouchEnd(e, status.id)}
                 >
                   <Card className="p-4 h-full">
                     <div className="flex items-center justify-between mb-4">
@@ -207,10 +243,11 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
                       {statusClients.map((client) => (
                         <Card
                           key={client.id}
-                          draggable
+                          draggable={!isMobile}
                           onDragStart={() => handleDragStart(client.id)}
-                          onClick={() => onClientClick(client.id)}
-                          className={`p-3 cursor-move hover:shadow-md transition-all border ${getQuadrantColor(client.quadrant)}`}
+                          onClick={() => !isMobile && onClientClick(client.id)}
+                          onTouchStart={(e) => handleTouchStart(e, client.id, status.id)}
+                          className={`p-3 ${isMobile ? 'active:scale-95' : 'cursor-move'} hover:shadow-md transition-all border ${getQuadrantColor(client.quadrant)}`}
                         >
                           <div className="space-y-2">
                             <div className="flex items-start justify-between gap-2">
@@ -269,7 +306,8 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
         <div className="p-4 bg-muted/50 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Icon name="Info" size={16} />
-            <span>Перетаскивайте карточки клиентов между колонками для изменения статуса сделки</span>
+            <span className="hidden md:inline">Перетаскивайте карточки клиентов между колонками для изменения статуса сделки</span>
+            <span className="md:hidden">Нажмите на карточку и выберите новый статус, или удерживайте и перетаскивайте между колонками</span>
           </div>
         </div>
       </div>

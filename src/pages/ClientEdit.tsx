@@ -340,9 +340,21 @@ const ClientEdit = () => {
     );
   }
 
+  const handleSaveClick = () => {
+    const form = document.querySelector('form');
+    if (form) {
+      form.requestSubmit();
+    }
+  };
+
   return (
     <AppLayout>
-      <ClientEditHeader client={client} onDelete={handleDelete} />
+      <ClientEditHeader 
+        client={client} 
+        onDelete={handleDelete}
+        onSave={handleSaveClick}
+        saving={saving}
+      />
 
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
         {error && (
@@ -354,29 +366,23 @@ const ClientEdit = () => {
 
         {client && (
           <div className="mb-6">
-            <ClientPositionCard client={client} />
+            <ClientPositionCard 
+              client={client}
+              matrixId={formData.matrix_id}
+              dealStatusId={formData.deal_status_id}
+              matrices={matrices}
+              dealStatuses={dealStatuses}
+              hasScores={scores.length > 0}
+              onMatrixChange={handleMatrixChange}
+              onDealStatusChange={(value) => setFormData({ ...formData, deal_status_id: value })}
+              onStartQuestionnaire={handleStartQuestionnaire}
+              onReassess={handleReassess}
+            />
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <ClientBasicInfoForm formData={formData} setFormData={setFormData} />
-
-          <ClientEditSelectors
-            dealStatusId={formData.deal_status_id}
-            matrixId={formData.matrix_id}
-            dealStatuses={dealStatuses}
-            matrices={matrices}
-            onDealStatusChange={(value) => setFormData({ ...formData, deal_status_id: value })}
-            onMatrixChange={handleMatrixChange}
-          />
-
-          <ClientScoresDisplay
-            matrixId={formData.matrix_id}
-            scores={scores}
-            criteria={criteria}
-            onStartQuestionnaire={handleStartQuestionnaire}
-            onReassess={handleReassess}
-          />
 
           <div className="flex items-center gap-4">
             <Button
