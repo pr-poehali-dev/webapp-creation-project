@@ -10,6 +10,7 @@ from db_helpers import get_user_by_telegram_id, link_user_telegram, create_suppo
 from fsm_client import start_client_creation, handle_fsm_message, cancel_client_creation, save_client_without_assessment, get_user_state
 from fsm_assessment import start_assessment, handle_criterion_score, cancel_assessment
 from support_channel import forward_to_support_channel, send_reply_to_user, notify_channel_thread_closed
+from fsm_registration import start_registration, handle_registration_message, cancel_registration
 
 
 def verify_jwt_token(token: str):
@@ -132,11 +133,7 @@ def handle_start(chat_id: int, telegram_id: int, text: str, username: str = None
         
         # Создание организации: create_org
         if param == 'create_org':
-            send_message(
-                chat_id,
-                "🚀 Создание аккаунта организации\n\n"
-                "Функционал в разработке. Свяжитесь с поддержкой для создания аккаунта."
-            )
+            start_registration(chat_id, telegram_id, username, full_name)
             
             return {
                 'statusCode': 200,
@@ -186,7 +183,15 @@ def handle_start(chat_id: int, telegram_id: int, text: str, username: str = None
 def handle_message(chat_id: int, telegram_id: int, text: str, username: str = None, full_name: str = None) -> dict:
     """Обработка текстовых сообщений"""
     
-    # Проверить FSM сначала
+    # Проверить FSM регистрации сначала
+    if handle_registration_message(chat_id, telegram_id, text):
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True})
+        }
+    
+    # Проверить FSM добавления клиента
     if handle_fsm_message(chat_id, telegram_id, text):
         return {
             'statusCode': 200,
@@ -317,6 +322,28 @@ def handle_callback(chat_id: int, telegram_id: int, callback_data: str, message_
         # notify_channel_thread_closed будет вызван отдельно
         
         send_message(chat_id, f"✅ Тред #{thread_id} закрыт.")
+        answer_callback_query(telegram_id)
+    
+    elif callback_data == 'cancel_registration':
+        cancel_registration(chat_id, telegram_id)
+        answer_callback_query(telegram_id)
+    
+    elif callback_data == 'use_telegram_name':
+        # Использовать имя из Telegram профиля
+        from fsm_registration import get_registration_state, set_registration_state
+        state_data = get_registration_state(telegram_id)
+        if state_data and state_data.get('state') == 'awaiting_owner_name':
+            data = state_data.get('data', {})
+            owner_name = data.get('owner_full_name', '')
+            set_registration_state(telegram_id, 'awaiting_owner_email', {'owner_name': owner_name})
+            
+            buttons = [[{'text': '❌ Отменить', 'callback_data': 'cancel_registration'}]]
+            send_message_with_buttons(
+                chat_id,
+                f"✅ Владелец: {owner_name}\n\n"
+                f"Шаг 3/4: Введите ваш email (для входа в систему):",
+                buttons
+            )
         answer_callback_query(telegram_id)
     
     elif callback_data == 'how_to_link':
