@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import ClientEditHeader from '@/components/client/ClientEditHeader';
 import ClientPositionCard from '@/components/client/ClientPositionCard';
 import ClientBasicInfoForm from '@/components/client/ClientBasicInfoForm';
-import ClientMatrixScoring from '@/components/client/ClientMatrixScoring';
+import QuestionnaireFlow from '@/components/client/wizard/QuestionnaireFlow';
+import { Badge } from '@/components/ui/badge';
 import AppLayout from '@/components/layout/AppLayout';
 
 interface Matrix {
   id: number;
   name: string;
+}
+
+interface CriterionStatus {
+  id: number;
+  label: string;
+  weight: number;
+  sort_order: number;
 }
 
 interface Criterion {
@@ -21,6 +31,7 @@ interface Criterion {
   weight: number;
   min_value: number;
   max_value: number;
+  statuses: CriterionStatus[];
 }
 
 interface Score {
@@ -64,6 +75,8 @@ const ClientEdit = () => {
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [error, setError] = useState('');
   const [client, setClient] = useState<Client | null>(null);
+  const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
+  const [reassessMode, setReassessMode] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -133,17 +146,15 @@ const ClientEdit = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
-        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ action: 'list' }),
       });
 
       const data = await response.json();
       if (response.ok) {
-        setMatrices(data.matrices);
+        const activeMatrices = data.matrices.filter((m: Matrix & { deleted_at?: string; is_active?: boolean }) => !m.deleted_at && m.is_active);
+        setMatrices(activeMatrices);
       }
     } catch (error) {
       console.error('Ошибка загрузки матриц:', error);
@@ -171,13 +182,10 @@ const ClientEdit = () => {
   const fetchMatrixCriteria = async (matrixId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
-        method: 'POST',
+      const response = await fetch(`https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc?id=${matrixId}`, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ action: 'get', matrix_id: parseInt(matrixId) }),
       });
 
       const data = await response.json();
@@ -280,6 +288,60 @@ const ClientEdit = () => {
     }
   };
 
+  const handleStartQuestionnaire = async () => {
+    if (!formData.matrix_id) {
+      setError('Выберите матрицу для оценки');
+      return;
+    }
+    
+    await fetchMatrixCriteria(formData.matrix_id);
+    setReassessMode(false);
+    setQuestionnaireOpen(true);
+  };
+
+  const handleReassess = async () => {
+    if (!formData.matrix_id) {
+      setError('У клиента нет матрицы для переоценки');
+      return;
+    }
+    
+    await fetchMatrixCriteria(formData.matrix_id);
+    setReassessMode(true);
+    setQuestionnaireOpen(true);
+  };
+
+  const handleQuestionnaireComplete = async (newScores: Score[]) => {
+    setScores(newScores);
+    setQuestionnaireOpen(false);
+    
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'update',
+          client_id: parseInt(id!),
+          scores: newScores,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка сохранения оценок');
+      }
+
+      await fetchClient();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка сохранения оценок');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -357,14 +419,69 @@ const ClientEdit = () => {
             </div>
           </div>
 
-          <ClientMatrixScoring
-            matrices={matrices}
-            criteria={criteria}
-            scores={scores}
-            matrixId={formData.matrix_id}
-            onMatrixChange={handleMatrixChange}
-            onScoreChange={handleScoreChange}
-          />
+          {formData.matrix_id && scores.length > 0 && (
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Текущие оценки</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Клиент оценен по {scores.length} {scores.length === 1 ? 'критерию' : scores.length < 5 ? 'критериям' : 'критериям'}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleReassess}
+                >
+                  <Icon name="RefreshCw" size={16} className="mr-2" />
+                  Переоценить
+                </Button>
+              </div>
+
+              <div className="grid gap-3">
+                {scores.map((score) => {
+                  const criterion = criteria.find(c => c.id === score.criterion_id);
+                  if (!criterion) return null;
+                  
+                  const selectedStatus = criterion.statuses.find(s => s.weight === score.score);
+                  
+                  return (
+                    <div key={score.criterion_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{criterion.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {criterion.axis === 'x' ? 'Ось X' : 'Ось Y'}
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {selectedStatus?.label || `${score.score} баллов`}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {formData.matrix_id && scores.length === 0 && (
+            <Card className="p-6">
+              <div className="text-center py-8">
+                <Icon name="ClipboardList" size={48} className="mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Клиент не оценен</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Пройдите опросник для оценки клиента по выбранной матрице
+                </p>
+                <Button
+                  type="button"
+                  onClick={handleStartQuestionnaire}
+                  className="gradient-primary"
+                >
+                  <Icon name="Play" size={16} className="mr-2" />
+                  Начать оценку
+                </Button>
+              </div>
+            </Card>
+          )}
 
           <div className="flex items-center gap-4">
             <Button
@@ -393,6 +510,24 @@ const ClientEdit = () => {
             </Button>
           </div>
         </form>
+
+        <Dialog open={questionnaireOpen} onOpenChange={setQuestionnaireOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {reassessMode ? 'Переоценка клиента' : 'Оценка клиента'}
+              </DialogTitle>
+            </DialogHeader>
+            {criteria.length > 0 && (
+              <QuestionnaireFlow
+                criteria={criteria}
+                initialScores={reassessMode ? scores : []}
+                onComplete={handleQuestionnaireComplete}
+                onBack={() => setQuestionnaireOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
