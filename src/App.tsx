@@ -16,6 +16,7 @@ import MatrixView from "./pages/MatrixView";
 import Clients from "./pages/Clients";
 import ClientNew from "./pages/ClientNew";
 import ClientEdit from "./pages/ClientEdit";
+import ClientsDeleted from "./pages/ClientsDeleted";
 import Export from "./pages/Export";
 import Import from "./pages/Import";
 import Settings from "./pages/Settings";
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/matrix/:id" element={<MatrixEdit />} />
           <Route path="/matrix/:id/view" element={<MatrixView />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/deleted" element={<ClientsDeleted />} />
           <Route path="/client/new" element={<ClientNew />} />
           <Route path="/client/:id" element={<ClientEdit />} />
           <Route path="/export" element={<Export />} />

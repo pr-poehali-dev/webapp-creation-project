@@ -241,19 +241,25 @@ const Clients = () => {
                 </p>
               </div>
             </div>
-            {hasMatrices ? (
-              <Link to="/client/new">
-                <Button className="gradient-primary" size="sm">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate('/clients/deleted')}>
+                <Icon name="Trash2" size={18} className="sm:mr-2" />
+                <span className="hidden sm:inline">Удаленные</span>
+              </Button>
+              {hasMatrices ? (
+                <Link to="/client/new">
+                  <Button className="gradient-primary" size="sm">
+                    <Icon name="Plus" size={18} className="sm:mr-2" />
+                    <span className="hidden sm:inline">Добавить</span>
+                  </Button>
+                </Link>
+              ) : (
+                <Button className="gradient-primary" size="sm" disabled title="Сначала создайте матрицу">
                   <Icon name="Plus" size={18} className="sm:mr-2" />
                   <span className="hidden sm:inline">Добавить</span>
                 </Button>
-              </Link>
-            ) : (
-              <Button className="gradient-primary" size="sm" disabled title="Сначала создайте матрицу">
-                <Icon name="Plus" size={18} className="sm:mr-2" />
-                <span className="hidden sm:inline">Добавить</span>
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

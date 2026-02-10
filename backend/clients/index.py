@@ -71,7 +71,7 @@ def handler(event: dict, context) -> dict:
                 FROM clients c
                 LEFT JOIN matrices m ON c.matrix_id = m.id
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
-                WHERE c.organization_id = %s AND c.is_active = true
+                WHERE c.organization_id = %s AND c.is_active = true AND c.deleted_at IS NULL
             """
             params = [organization_id]
             
@@ -134,7 +134,7 @@ def handler(event: dict, context) -> dict:
                 FROM clients c
                 LEFT JOIN matrices m ON c.matrix_id = m.id
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
-                WHERE c.id = %s AND c.organization_id = %s AND c.is_active = true
+                WHERE c.id = %s AND c.organization_id = %s AND c.is_active = true AND c.deleted_at IS NULL
             """, (client_id, organization_id))
             
             row = cur.fetchone()
@@ -272,7 +272,7 @@ def handler(event: dict, context) -> dict:
             
             cur.execute("""
                 SELECT id FROM clients 
-                WHERE id = %s AND organization_id = %s AND is_active = true
+                WHERE id = %s AND organization_id = %s AND is_active = true AND deleted_at IS NULL
             """ % (client_id, organization_id))
             
             if not cur.fetchone():
@@ -365,7 +365,7 @@ def handler(event: dict, context) -> dict:
             
             cur.execute("""
                 SELECT id, matrix_id FROM clients 
-                WHERE id = %s AND organization_id = %s AND is_active = true
+                WHERE id = %s AND organization_id = %s AND is_active = true AND deleted_at IS NULL
             """, (client_id, organization_id))
             
             client_row = cur.fetchone()
@@ -425,8 +425,8 @@ def handler(event: dict, context) -> dict:
                 }
             
             cur.execute("""
-                UPDATE clients SET is_active = false 
-                WHERE id = %s AND organization_id = %s
+                UPDATE clients SET deleted_at = CURRENT_TIMESTAMP 
+                WHERE id = %s AND organization_id = %s AND deleted_at IS NULL
             """, (client_id, organization_id))
             
             conn.commit()
@@ -434,7 +434,7 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'message': 'Клиент деактивирован'}),
+                'body': json.dumps({'message': 'Клиент удален'}),
                 'isBase64Encoded': False
             }
         
@@ -445,7 +445,8 @@ def handler(event: dict, context) -> dict:
                        ds.name as deal_status_name, ds.weight as deal_status_weight
                 FROM clients c
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
-                WHERE c.organization_id = %s AND c.is_active = true AND c.matrix_id IS NULL
+                WHERE c.organization_id = %s AND c.is_active = true AND c.deleted_at IS NULL 
+                      AND (c.matrix_id IS NULL OR (c.matrix_id IS NOT NULL AND c.score_x = 0 AND c.score_y = 0))
                 ORDER BY c.created_at DESC
             """, (organization_id,))
             
@@ -475,6 +476,80 @@ def handler(event: dict, context) -> dict:
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                 'body': json.dumps({'clients': clients, 'count': len(clients)}),
+                'isBase64Encoded': False
+            }
+        
+        elif action == 'list_deleted':
+            cur.execute("""
+                SELECT c.id, c.company_name, c.contact_person, c.email, c.phone,
+                       c.description, c.score_x, c.score_y, c.quadrant,
+                       c.matrix_id, m.name as matrix_name, c.deleted_at,
+                       c.deal_status_id, ds.name as deal_status_name, ds.weight as deal_status_weight
+                FROM clients c
+                LEFT JOIN matrices m ON c.matrix_id = m.id
+                LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
+                WHERE c.organization_id = %s AND c.deleted_at IS NOT NULL
+                ORDER BY c.deleted_at DESC
+            """, (organization_id,))
+            
+            rows = cur.fetchall()
+            
+            clients = []
+            for row in rows:
+                clients.append({
+                    'id': row[0],
+                    'company_name': row[1],
+                    'contact_person': row[2],
+                    'email': row[3],
+                    'phone': row[4],
+                    'description': row[5],
+                    'score_x': float(row[6]) if row[6] else 0,
+                    'score_y': float(row[7]) if row[7] else 0,
+                    'quadrant': row[8],
+                    'matrix_id': row[9],
+                    'matrix_name': row[10],
+                    'deleted_at': row[11].isoformat() if row[11] else None,
+                    'deal_status_id': row[12],
+                    'deal_status_name': row[13],
+                    'deal_status_weight': row[14]
+                })
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'clients': clients, 'count': len(clients)}),
+                'isBase64Encoded': False
+            }
+        
+        elif action == 'restore':
+            client_id = body.get('client_id')
+            if not client_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'client_id обязателен'}),
+                    'isBase64Encoded': False
+                }
+            
+            cur.execute("""
+                UPDATE clients SET deleted_at = NULL 
+                WHERE id = %s AND organization_id = %s AND deleted_at IS NOT NULL
+            """, (client_id, organization_id))
+            
+            if cur.rowcount == 0:
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Клиент не найден или уже восстановлен'}),
+                    'isBase64Encoded': False
+                }
+            
+            conn.commit()
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'message': 'Клиент восстановлен'}),
                 'isBase64Encoded': False
             }
         
