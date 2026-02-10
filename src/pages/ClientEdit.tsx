@@ -135,9 +135,7 @@ const ClientEdit = () => {
 
       const data = await response.json();
       if (response.ok) {
-        console.log('Client data from backend:', data.client);
-        console.log('Responsible user ID:', data.client.responsible_user_id);
-        console.log('Responsible user name:', data.client.responsible_user_name);
+
         setClient(data.client);
         setFormData({
           company_name: data.client.company_name,
@@ -204,7 +202,7 @@ const ClientEdit = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://functions.poehali.dev/e31e3e4c-0a81-48d5-82da-b14d464e95a8', {
+      const response = await fetch('https://functions.poehali.dev/369fdc8c-fb5b-4b02-bb8f-ef5d8da3de3e', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -212,7 +210,7 @@ const ClientEdit = () => {
 
       const data = await response.json();
       if (response.ok) {
-        console.log('Users from backend:', data.users);
+
         setUsers(data.users);
       }
     } catch (error) {

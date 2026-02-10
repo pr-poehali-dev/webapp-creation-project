@@ -233,7 +233,7 @@ export const useClientsData = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://functions.poehali.dev/e31e3e4c-0a81-48d5-82da-b14d464e95a8', {
+      const response = await fetch('https://functions.poehali.dev/369fdc8c-fb5b-4b02-bb8f-ef5d8da3de3e', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

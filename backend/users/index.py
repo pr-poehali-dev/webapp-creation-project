@@ -45,10 +45,11 @@ def handler(event: dict, context) -> dict:
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, X-Authorization',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Authorization',
                 'Access-Control-Max-Age': '86400'
             },
-            'body': ''
+            'body': '',
+            'isBase64Encoded': False
         }
     
     auth_header = event.get('headers', {}).get('X-Authorization', '')
@@ -58,7 +59,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Authorization required'})
+            'body': json.dumps({'error': 'Authorization required'}),
+            'isBase64Encoded': False
         }
     
     payload = verify_jwt_token(token)
@@ -66,7 +68,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Invalid token'})
+            'body': json.dumps({'error': 'Invalid token'}),
+            'isBase64Encoded': False
         }
     
     try:
@@ -84,20 +87,23 @@ def handler(event: dict, context) -> dict:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Invalid action. Use: update or delete'})
+                    'body': json.dumps({'error': 'Invalid action. Use: update or delete'}),
+                    'isBase64Encoded': False
                 }
         else:
             return {
                 'statusCode': 405,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Method not allowed'})
+                'body': json.dumps({'error': 'Method not allowed'}),
+                'isBase64Encoded': False
             }
     
     except Exception as e:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
         }
 
 
@@ -115,7 +121,8 @@ def handle_list(payload: dict) -> dict:
             FROM users
             WHERE organization_id = %s
             ORDER BY created_at ASC
-            """ % organization_id
+            """,
+            (organization_id,)
         )
         
         users = []
@@ -133,7 +140,8 @@ def handle_list(payload: dict) -> dict:
         return {
             'statusCode': 200,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'users': users})
+            'body': json.dumps({'users': users}),
+            'isBase64Encoded': False
         }
     
     finally:
