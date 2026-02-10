@@ -4,27 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
-import AppLayout from '@/components/layout/AppLayout';
-
 
 interface User {
   id: number;
-  email: string;
+  username: string;
   full_name: string;
   role: string;
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;
-}
-
-interface Invitation {
-  id: number;
-  email: string;
-  role: string;
-  status: string;
-  created_at: string;
-  expires_at: string;
-  invited_by_name: string;
 }
 
 interface CurrentUser {
@@ -37,14 +25,17 @@ const Team = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('manager');
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
 
+  const [formData, setFormData] = useState({
+    username: '',
+    full_name: '',
+    role: 'manager'
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -58,43 +49,33 @@ const Team = () => {
     const user = JSON.parse(userData);
     setCurrentUser(user);
 
-    fetchData(token);
+    fetchUsers(token);
   }, [navigate]);
 
-  const fetchData = async (token: string) => {
+  const fetchUsers = async (token: string) => {
     setLoading(true);
     try {
-      const [usersRes, invitesRes] = await Promise.all([
-        fetch('https://functions.poehali.dev/369fdc8c-fb5b-4b02-bb8f-ef5d8da3de3e', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('https://functions.poehali.dev/81e1a6f6-951b-4c0b-b28e-5883c65d5bcf', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ]);
+      const response = await fetch('https://functions.poehali.dev/369fdc8c-fb5b-4b02-bb8f-ef5d8da3de3e', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        setUsers(usersData.users || []);
-      }
-
-      if (invitesRes.ok) {
-        const invitesData = await invitesRes.json();
-        setInvitations(invitesData.invitations || []);
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
       }
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching users:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInvite = async () => {
+  const handleCreateUser = async () => {
     setError('');
     setSuccess('');
 
-    if (!inviteEmail) {
-      setError('Введите email');
+    if (!formData.username || !formData.full_name) {
+      setError('Заполните все поля');
       return;
     }
 
@@ -102,32 +83,48 @@ const Team = () => {
     if (!token) return;
 
     try {
-      const response = await fetch('https://functions.poehali.dev/81e1a6f6-951b-4c0b-b28e-5883c65d5bcf', {
+      const response = await fetch('https://functions.poehali.dev/9f41e955-72a6-447c-aaae-4b5ea1b0c30a', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          action: 'create',
-          email: inviteEmail,
-          role: inviteRole
+          username: formData.username,
+          full_name: formData.full_name,
+          role: formData.role,
+          auto_password: true
         })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Ошибка создания приглашения');
+        throw new Error(data.error || 'Ошибка создания пользователя');
       }
 
-      setSuccess('Приглашение отправлено!');
-      setInviteEmail('');
-      setShowInviteModal(false);
-      fetchData(token);
+      setCreatedCredentials({
+        username: data.user.username,
+        password: data.user.password
+      });
+      setSuccess('Пользователь создан!');
+      setFormData({ username: '', full_name: '', role: 'manager' });
+      fetchUsers(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     }
+  };
+
+  const handleCopyCredentials = () => {
+    if (!createdCredentials) return;
+
+    const text = `Логин: ${createdCredentials.username}\nПароль: ${createdCredentials.password}`;
+    navigator.clipboard.writeText(text);
+    setSuccess('Данные скопированы в буфер обмена!');
+    setTimeout(() => {
+      setCreatedCredentials(null);
+      setShowCreateModal(false);
+    }, 1500);
   };
 
   const handleUpdateUser = async (userId: number, updates: { role?: string; is_active?: boolean }) => {
@@ -150,36 +147,10 @@ const Team = () => {
 
       if (response.ok) {
         setSuccess('Пользователь обновлён');
-        fetchData(token);
+        fetchUsers(token);
       }
     } catch (err) {
       console.error('Error updating user:', err);
-    }
-  };
-
-  const handleCancelInvite = async (invitationId: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-      const response = await fetch('https://functions.poehali.dev/81e1a6f6-951b-4c0b-b28e-5883c65d5bcf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          action: 'cancel',
-          invitation_id: invitationId
-        })
-      });
-
-      if (response.ok) {
-        setSuccess('Приглашение отменено');
-        fetchData(token);
-      }
-    } catch (err) {
-      console.error('Error cancelling invitation:', err);
     }
   };
 
@@ -188,6 +159,7 @@ const Team = () => {
       owner: 'bg-primary/10 text-primary border-primary/20',
       admin: 'bg-secondary/10 text-secondary border-secondary/20',
       manager: 'bg-accent/10 text-accent border-accent/20',
+      department_head: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
       viewer: 'bg-muted text-muted-foreground border-border'
     };
     const labels = {
@@ -213,24 +185,25 @@ const Team = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
               <Icon name="ArrowLeft" size={16} className="mr-2" />
               Назад
             </Button>
-            <h1 className="text-xl font-bold">Команда</h1>
+            <h1 className="text-lg sm:text-xl font-bold">Команда</h1>
           </div>
           {canManage && (
-            <Button className="gradient-primary" onClick={() => setShowInviteModal(true)}>
+            <Button className="gradient-primary text-sm sm:text-base" onClick={() => setShowCreateModal(true)}>
               <Icon name="UserPlus" size={16} className="mr-2" />
-              Пригласить
+              <span className="hidden sm:inline">Создать пользователя</span>
+              <span className="sm:hidden">Создать</span>
             </Button>
           )}
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {error && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-destructive flex-shrink-0" />
@@ -245,137 +218,147 @@ const Team = () => {
           </div>
         )}
 
-        <div className="max-w-5xl mx-auto space-y-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Пользователи ({users.length})</h2>
-            </div>
+        <div className="max-w-5xl mx-auto">
+          <Card className="p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Пользователи ({users.length})</h2>
 
             <div className="space-y-3">
               {users.map(user => (
-                <div key={user.id} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                      <span className="text-lg font-bold text-white">
-                        {user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors gap-3">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+                      <span className="text-base sm:text-lg font-bold text-white">
+                        {user.full_name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <p className="font-semibold">{user.full_name}</p>
-                        {getRoleBadge(user.role)}
-                        {!user.is_active && <Badge variant="outline" className="text-destructive">Неактивен</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm sm:text-base truncate">{user.full_name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">@{user.username}</p>
                     </div>
                   </div>
 
-                  {canManage && user.role !== 'owner' && user.id !== currentUser?.id && (
-                    <div className="flex items-center gap-2">
-                      {user.is_active ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUpdateUser(user.id, { is_active: false })}
-                        >
-                          <Icon name="UserX" size={16} />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUpdateUser(user.id, { is_active: true })}
-                        >
-                          <Icon name="UserCheck" size={16} />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+                    {getRoleBadge(user.role)}
+                    {!user.is_active && (
+                      <Badge className="bg-destructive/10 text-destructive border-destructive/20">
+                        Отключён
+                      </Badge>
+                    )}
+                    {canManage && user.id !== currentUser?.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUpdateUser(user.id, { is_active: !user.is_active })}
+                      >
+                        <Icon name={user.is_active ? 'UserX' : 'UserCheck'} size={16} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </Card>
-
-          {invitations.length > 0 && (
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Приглашения ({invitations.length})</h2>
-
-              <div className="space-y-3">
-                {invitations.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <p className="font-medium">{inv.email}</p>
-                        {getRoleBadge(inv.role)}
-                        <Badge variant="outline" className={inv.status === 'pending' ? 'text-secondary' : 'text-muted-foreground'}>
-                          {inv.status === 'pending' ? 'Ожидает' : inv.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Пригласил: {inv.invited_by_name} • {new Date(inv.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    {canManage && inv.status === 'pending' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCancelInvite(inv.id)}
-                      >
-                        <Icon name="X" size={16} />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
         </div>
       </main>
 
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">Пригласить пользователя</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowInviteModal(false)}>
-                <Icon name="X" size={20} />
-              </Button>
-            </div>
+            <h3 className="text-xl font-bold mb-4">Создать пользователя</h3>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="colleague@example.com"
-                />
-              </div>
+            {createdCredentials ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-3">Данные для входа:</p>
+                  <div className="space-y-2 mb-4">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Логин:</span>
+                      <p className="font-mono font-semibold">{createdCredentials.username}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Пароль:</span>
+                      <p className="font-mono font-semibold">{createdCredentials.password}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-600">⚠️ Сохраните эти данные! Они больше не будут показаны.</p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Роль</label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                <Button
+                  className="w-full gradient-primary"
+                  onClick={handleCopyCredentials}
                 >
-                  <option value="manager">Менеджер</option>
-                  <option value="admin">Админ</option>
-                  <option value="department_head">Руководитель отдела</option>
-                </select>
+                  <Icon name="Copy" size={16} className="mr-2" />
+                  Скопировать данные
+                </Button>
               </div>
+            ) : (
+              <>
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Логин</label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
+                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="ivan_manager"
+                    />
+                  </div>
 
-              <Button
-                className="w-full gradient-primary"
-                onClick={handleInvite}
-              >
-                <Icon name="Send" size={16} className="mr-2" />
-                Отправить приглашение
-              </Button>
-            </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Полное имя</label>
+                    <input
+                      type="text"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Иван Иванов"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Роль</label>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      className="w-full px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="manager">Менеджер</option>
+                      <option value="department_head">Руководитель отдела</option>
+                      <option value="admin">Админ</option>
+                      <option value="viewer">Наблюдатель</option>
+                    </select>
+                  </div>
+
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      <Icon name="Info" size={14} className="inline mr-1" />
+                      Пароль будет сгенерирован автоматически
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setFormData({ username: '', full_name: '', role: 'manager' });
+                      setError('');
+                    }}
+                  >
+                    Отмена
+                  </Button>
+                  <Button
+                    className="flex-1 gradient-primary"
+                    onClick={handleCreateUser}
+                  >
+                    Создать
+                  </Button>
+                </div>
+              </>
+            )}
           </Card>
         </div>
       )}
