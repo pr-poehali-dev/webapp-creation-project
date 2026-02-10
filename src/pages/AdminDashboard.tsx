@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
+import OrganizationsTable from '@/components/admin/OrganizationsTable';
+import EditOrganizationDialog from '@/components/admin/EditOrganizationDialog';
+import CreateOrganizationDialog from '@/components/admin/CreateOrganizationDialog';
+import AdminSettingsDialog from '@/components/admin/AdminSettingsDialog';
 
 const ADMIN_ORGS_URL = import.meta.env.VITE_ADMIN_ORGS_URL || 'https://functions.poehali.dev/27c59523-c1ea-424b-a922-e5af28d26e5e';
 const ADMIN_SETTINGS_URL = import.meta.env.VITE_ADMIN_SETTINGS_URL || 'https://functions.poehali.dev/e34420aa-6eec-4e3d-9cdb-006ded09aff2';
@@ -180,7 +178,6 @@ export default function AdminDashboard() {
           title: 'Организация создана',
           description: `Логин: ${data.username}, Пароль: ${data.password}`,
         });
-        // Сбросить форму
         setCreateForm({
           name: '',
           owner_username: '',
@@ -208,7 +205,7 @@ export default function AdminDashboard() {
           'X-Authorization': `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.dumps({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (response.ok) {
@@ -279,33 +276,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const getTierBadge = (tier: string) => {
-    const colors = {
-      free: 'bg-gray-100 text-gray-800',
-      basic: 'bg-blue-100 text-blue-800',
-      pro: 'bg-purple-100 text-purple-800',
-      enterprise: 'bg-green-100 text-green-800',
-    };
-    return colors[tier as keyof typeof colors] || colors.free;
-  };
-
-  const getStatusBadge = (status: string) => {
-    const colors = {
-      active: 'bg-green-100 text-green-800',
-      suspended: 'bg-orange-100 text-orange-800',
-      deleted: 'bg-red-100 text-red-800',
-    };
-    return colors[status as keyof typeof colors] || colors.active;
-  };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('ru-RU');
-  };
-
-  const isExpired = (dateStr: string | null) => {
-    if (!dateStr) return false;
-    return new Date(dateStr) < new Date();
+  const handleCreateFormChange = (newForm: typeof createForm) => {
+    if (newForm.subscription_tier !== createForm.subscription_tier) {
+      const limits = getTierLimits(newForm.subscription_tier);
+      setCreateForm({
+        ...newForm,
+        users_limit: limits.users,
+        matrices_limit: limits.matrices,
+        clients_limit: limits.clients,
+      });
+    } else {
+      setCreateForm(newForm);
+    }
   };
 
   if (loading) {
@@ -357,114 +339,11 @@ export default function AdminDashboard() {
               </Button>
             </div>
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Организация</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead>Тариф</TableHead>
-                    <TableHead>Период</TableHead>
-                    <TableHead>Лимиты</TableHead>
-                    <TableHead>Использование</TableHead>
-                    <TableHead>Создана</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {organizations.map((org) => (
-                    <TableRow key={org.id}>
-                      <TableCell className="font-mono text-sm">
-                        #{org.id}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {org.name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusBadge(org.status)}>
-                          {org.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getTierBadge(org.subscription_tier)}>
-                          {org.subscription_tier}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        <div className={isExpired(org.subscription_end_date) ? 'text-red-600' : ''}>
-                          {formatDate(org.subscription_start_date)} —{' '}
-                          {formatDate(org.subscription_end_date)}
-                          {isExpired(org.subscription_end_date) && (
-                            <span className="ml-2 text-xs">⚠️ Истёк</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        <div className="space-y-1">
-                          <div>👥 {org.users_limit} польз.</div>
-                          <div>📊 {org.matrices_limit} матр.</div>
-                          <div>👔 {org.clients_limit} клиент.</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        <div className="space-y-1">
-                          <div className={org.users_count >= org.users_limit ? 'text-red-600 font-semibold' : ''}>
-                            {org.users_count} / {org.users_limit}
-                          </div>
-                          <div className={org.matrices_count >= org.matrices_limit ? 'text-red-600 font-semibold' : ''}>
-                            {org.matrices_count} / {org.matrices_limit}
-                          </div>
-                          <div className={org.clients_count >= org.clients_limit ? 'text-red-600 font-semibold' : ''}>
-                            {org.clients_count} / {org.clients_limit}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-500">
-                        {formatDate(org.created_at)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditOrg(org)}
-                          >
-                            <Icon name="Edit" className="h-4 w-4" />
-                          </Button>
-                          {org.status === 'active' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleChangeStatus(org.id, 'suspended')}
-                            >
-                              <Icon name="Pause" className="h-4 w-4" />
-                            </Button>
-                          ) : org.status === 'suspended' ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleChangeStatus(org.id, 'active')}
-                            >
-                              <Icon name="Play" className="h-4 w-4" />
-                            </Button>
-                          ) : null}
-                          {org.status !== 'deleted' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleChangeStatus(org.id, 'deleted')}
-                            >
-                              <Icon name="Trash2" className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <OrganizationsTable
+              organizations={organizations}
+              onEdit={handleEditOrg}
+              onChangeStatus={handleChangeStatus}
+            />
 
             {organizations.length === 0 && (
               <div className="text-center py-12 text-gray-500">
@@ -474,316 +353,32 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Диалог редактирования тарифа */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Редактировать тариф</DialogTitle>
-              <DialogDescription>
-                {selectedOrg?.name} (ID: #{selectedOrg?.id})
-              </DialogDescription>
-            </DialogHeader>
+        <EditOrganizationDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          selectedOrg={selectedOrg}
+          editForm={editForm}
+          onFormChange={setEditForm}
+          onSave={handleSaveSubscription}
+        />
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Тариф</Label>
-                <Select
-                  value={editForm.subscription_tier}
-                  onValueChange={(value) =>
-                    setEditForm({ ...editForm, subscription_tier: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="basic">Basic</SelectItem>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <CreateOrganizationDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          createForm={createForm}
+          onFormChange={handleCreateFormChange}
+          onCreate={handleCreateOrganization}
+        />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Дата начала</Label>
-                  <Input
-                    type="date"
-                    value={editForm.subscription_start_date}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, subscription_start_date: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Дата окончания</Label>
-                  <Input
-                    type="date"
-                    value={editForm.subscription_end_date}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, subscription_end_date: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Лимит пользователей</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editForm.users_limit}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, users_limit: parseInt(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Лимит матриц</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editForm.matrices_limit}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, matrices_limit: parseInt(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Лимит клиентов</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editForm.clients_limit}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, clients_limit: parseInt(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleSaveSubscription} className="flex-1">
-                  Сохранить
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setEditDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Отмена
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Диалог создания организации */}
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Создать организацию</DialogTitle>
-              <DialogDescription>
-                Будет создана организация и owner пользователь
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Название организации</Label>
-                <Input
-                  value={createForm.name}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, name: e.target.value })
-                  }
-                  placeholder="Моя компания"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Логин owner</Label>
-                <Input
-                  value={createForm.owner_username}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, owner_username: e.target.value })
-                  }
-                  placeholder="owner_username"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Пароль (оставьте пустым для автогенерации)</Label>
-                <Input
-                  type="password"
-                  value={createForm.owner_password}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, owner_password: e.target.value })
-                  }
-                  placeholder="Автоматически"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Тариф</Label>
-                <Select
-                  value={createForm.subscription_tier}
-                  onValueChange={(value) => {
-                    const limits = getTierLimits(value);
-                    setCreateForm({
-                      ...createForm,
-                      subscription_tier: value,
-                      users_limit: limits.users,
-                      matrices_limit: limits.matrices,
-                      clients_limit: limits.clients,
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="basic">Basic</SelectItem>
-                    <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Дата начала</Label>
-                  <Input
-                    type="date"
-                    value={createForm.subscription_start_date}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, subscription_start_date: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Дата окончания</Label>
-                  <Input
-                    type="date"
-                    value={createForm.subscription_end_date}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, subscription_end_date: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Польз.</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={createForm.users_limit}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, users_limit: parseInt(e.target.value) || 0 })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Матр.</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={createForm.matrices_limit}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, matrices_limit: parseInt(e.target.value) || 0 })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Клиент.</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={createForm.clients_limit}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, clients_limit: parseInt(e.target.value) || 0 })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleCreateOrganization} className="flex-1">
-                  Создать
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Отмена
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Диалог настроек админа */}
-        <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Настройки администратора</DialogTitle>
-              <DialogDescription>
-                Изменение логина и пароля
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold">Изменить логин</h3>
-                <div className="space-y-2">
-                  <Label>Новый логин</Label>
-                  <Input
-                    value={settingsForm.new_username}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, new_username: e.target.value })
-                    }
-                    placeholder={adminUsername || ''}
-                  />
-                </div>
-                <Button onClick={handleUpdateUsername} size="sm">
-                  Сохранить логин
-                </Button>
-              </div>
-
-              <div className="border-t pt-4 space-y-4">
-                <h3 className="text-sm font-semibold">Изменить пароль</h3>
-                <div className="space-y-2">
-                  <Label>Текущий пароль</Label>
-                  <Input
-                    type="password"
-                    value={settingsForm.current_password}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, current_password: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Новый пароль</Label>
-                  <Input
-                    type="password"
-                    value={settingsForm.new_password}
-                    onChange={(e) =>
-                      setSettingsForm({ ...settingsForm, new_password: e.target.value })
-                    }
-                  />
-                </div>
-                <Button onClick={handleUpdatePassword} size="sm">
-                  Сохранить пароль
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <AdminSettingsDialog
+          open={settingsDialogOpen}
+          onOpenChange={setSettingsDialogOpen}
+          adminUsername={adminUsername}
+          settingsForm={settingsForm}
+          onFormChange={setSettingsForm}
+          onUpdateUsername={handleUpdateUsername}
+          onUpdatePassword={handleUpdatePassword}
+        />
       </div>
     </div>
   );
