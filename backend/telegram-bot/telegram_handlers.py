@@ -6,9 +6,10 @@ import os
 import jwt
 import base64
 from telegram_api import send_message, send_message_with_buttons, answer_callback_query
-from db_helpers import get_user_by_telegram_id, link_user_telegram, create_support_thread
+from db_helpers import get_user_by_telegram_id, link_user_telegram, create_support_thread, get_thread_by_id, close_support_thread, add_message_to_thread
 from fsm_client import start_client_creation, handle_fsm_message, cancel_client_creation, save_client_without_assessment, get_user_state
 from fsm_assessment import start_assessment, handle_criterion_score, cancel_assessment
+from support_channel import forward_to_support_channel, send_reply_to_user, notify_channel_thread_closed
 
 
 def verify_jwt_token(token: str):
@@ -17,6 +18,78 @@ def verify_jwt_token(token: str):
         return jwt.decode(token, secret, algorithms=['HS256'])
     except:
         return None
+
+
+def handle_reply_command(chat_id: int, telegram_id: int, text: str) -> dict:
+    """Обработка команды /reply для ответа на тред поддержки"""
+    
+    # Формат: /reply thread_id текст ответа
+    parts = text.split(' ', 2)
+    
+    if len(parts) < 3:
+        send_message(
+            chat_id,
+            "❌ Неверный формат команды.\n\n"
+            "Используйте: `/reply thread_id текст ответа`"
+        )
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True})
+        }
+    
+    try:
+        thread_id = int(parts[1])
+        reply_text = parts[2]
+        
+        # Получить информацию о треде
+        thread = get_thread_by_id(thread_id)
+        
+        if not thread:
+            send_message(chat_id, f"❌ Тред #{thread_id} не найден.")
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({'ok': True})
+            }
+        
+        if thread['status'] == 'closed':
+            send_message(chat_id, f"❌ Тред #{thread_id} уже закрыт.")
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({'ok': True})
+            }
+        
+        # Отправить ответ пользователю
+        user_telegram_id = thread['telegram_user_id']
+        send_reply_to_user(user_telegram_id, reply_text)
+        
+        # Добавить сообщение в тред
+        add_message_to_thread(thread_id, telegram_id, reply_text, 'admin')
+        
+        # Подтверждение администратору
+        send_message(
+            chat_id,
+            f"✅ Ответ отправлен пользователю в треде #{thread_id}"
+        )
+        
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True})
+        }
+        
+    except ValueError:
+        send_message(
+            chat_id,
+            "❌ Неверный ID треда. Используйте число."
+        )
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'ok': True})
+        }
 
 
 def handle_start(chat_id: int, telegram_id: int, text: str, username: str = None, full_name: str = None) -> dict:
@@ -127,13 +200,14 @@ def handle_message(chat_id: int, telegram_id: int, text: str, username: str = No
     if not user:
         thread_id = create_support_thread(telegram_id, username, full_name, text)
         
+        # Переслать в канал поддержки
+        forward_to_support_channel(telegram_id, username, full_name, text, thread_id)
+        
         send_message(
             chat_id,
             "✉️ Ваше сообщение отправлено в поддержку.\n"
             "Мы ответим вам в ближайшее время!"
         )
-        
-        # TODO: Отправить уведомление в канал поддержки
         
         return {
             'statusCode': 200,
@@ -183,7 +257,8 @@ def handle_callback(chat_id: int, telegram_id: int, callback_data: str, message_
         send_message(
             chat_id,
             "💬 Служба поддержки\n\n"
-            "Напишите ваш вопрос, и мы ответим в ближайшее время."
+            "Напишите ваш вопрос, и мы ответим в ближайшее время.\n\n"
+            "Если вы уже писали ранее, просто отправьте новое сообщение - оно добавится в ваш тред."
         )
         answer_callback_query(telegram_id)
     
@@ -217,6 +292,31 @@ def handle_callback(chat_id: int, telegram_id: int, callback_data: str, message_
     
     elif callback_data == 'cancel_assessment':
         cancel_assessment(chat_id, telegram_id)
+        answer_callback_query(telegram_id)
+    
+    elif callback_data.startswith('reply_'):
+        # Кнопка "Ответить" в канале поддержки: reply_thread_id_user_telegram_id
+        parts = callback_data.split('_')
+        if len(parts) == 3:
+            thread_id = int(parts[1])
+            user_telegram_id = int(parts[2])
+            
+            send_message(
+                chat_id,
+                f"✍️ Введите ваш ответ для треда #{thread_id}\n\n"
+                f"Формат: `/reply {thread_id} текст вашего ответа`"
+            )
+        answer_callback_query(telegram_id)
+    
+    elif callback_data.startswith('close_'):
+        # Закрыть тред поддержки: close_thread_id
+        thread_id = int(callback_data.split('_')[1])
+        close_support_thread(thread_id)
+        
+        # Обновить сообщение в канале
+        # notify_channel_thread_closed будет вызван отдельно
+        
+        send_message(chat_id, f"✅ Тред #{thread_id} закрыт.")
         answer_callback_query(telegram_id)
     
     elif callback_data == 'how_to_link':

@@ -139,6 +139,10 @@ def handler(event: dict, context) -> dict:
             if 'text' in message and message['text'].startswith('/start'):
                 return handle_start(chat_id, telegram_id, message['text'], username, full_name)
             
+            # Обработка команды /reply (ответ от админа)
+            if 'text' in message and message['text'].startswith('/reply'):
+                return handle_reply_command(chat_id, telegram_id, message['text'])
+            
             # Обработка текстовых сообщений
             if 'text' in message:
                 return handle_message(chat_id, telegram_id, message['text'], username, full_name)
