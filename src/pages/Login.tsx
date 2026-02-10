@@ -10,7 +10,7 @@ const Login = () => {
   const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -27,7 +27,7 @@ const Login = () => {
         },
         body: JSON.stringify({
           action: 'login',
-          email: formData.email,
+          username: formData.username,
           password: formData.password,
         }),
       });
@@ -71,17 +71,17 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div>
-            <label htmlFor="email" className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
-              Email
+            <label htmlFor="username" className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">
+              Логин
             </label>
             <input
-              id="email"
-              type="email"
+              id="username"
+              type="text"
               required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="ivan@example.com"
+              placeholder="ivan_manager"
             />
           </div>
 

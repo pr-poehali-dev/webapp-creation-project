@@ -1,38 +1,30 @@
 {
   "tests": [
     {
-      "name": "Test signup with new organization",
+      "name": "Test signup - should be disabled",
       "method": "POST",
       "path": "/",
       "body": {
         "action": "signup",
-        "organization_name": "New Test Company",
-        "email": "newuser@techsale.com",
-        "password": "securepass123",
-        "full_name": "Jane Smith"
+        "organization_name": "Test Org",
+        "full_name": "Test User",
+        "email": "test@test.com",
+        "password": "testpass123"
       },
-      "expectedStatus": 201,
+      "expectedStatus": 403,
       "expectedBody": {
-        "token": "string",
-        "user": {
-          "id": "number",
-          "email": "string",
-          "full_name": "string",
-          "role": "owner",
-          "organization_id": "number",
-          "organization_name": "string"
-        }
+        "error": "string"
       },
       "bodyMatcher": "partial"
     },
     {
-      "name": "Test login with invalid email",
+      "name": "Test login with invalid username",
       "method": "POST",
       "path": "/",
       "body": {
         "action": "login",
-        "email": "nonexistent@example.com",
-        "password": "somepassword"
+        "username": "nonexistent",
+        "password": "wrong"
       },
       "expectedStatus": 401,
       "expectedBody": {

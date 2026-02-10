@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "name": "Create user without auth",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "username": "testuser",
+        "full_name": "Test User",
+        "role": "manager"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "Unauthorized"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
