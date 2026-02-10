@@ -1,7 +1,15 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import { QuadrantRule } from './QuadrantRulesEditor';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface Template {
   id: number;
@@ -43,6 +51,13 @@ const templateIcons: Record<string, string> = {
   'Консалтинг': 'Briefcase'
 };
 
+const QUADRANT_CONFIG = {
+  focus: { label: 'Фокус', icon: 'Target', color: 'text-green-500' },
+  monitor: { label: 'Мониторить', icon: 'Eye', color: 'text-blue-500' },
+  grow: { label: 'Выращивать', icon: 'TrendingUp', color: 'text-yellow-500' },
+  archive: { label: 'Архив', icon: 'Archive', color: 'text-gray-500' }
+};
+
 export const MatrixPreviewStep = ({
   matrixName,
   matrixDescription,
@@ -54,99 +69,143 @@ export const MatrixPreviewStep = ({
   onBack,
   onCreate
 }: MatrixPreviewStepProps) => {
+  const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-6">Предпросмотр матрицы</h2>
         
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Название</h3>
-            <p className="text-lg font-semibold">{matrixName}</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-1">Название</h3>
+              <p className="text-sm font-medium">{matrixName}</p>
+            </div>
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground mb-1">Шаблон</h3>
+              <div className="flex items-center gap-2">
+                <Icon 
+                  name={selectedTemplate ? templateIcons[selectedTemplate.name] || 'Layers' : 'Plus'} 
+                  size={16} 
+                  className="text-primary" 
+                />
+                <p className="text-sm">
+                  {selectedTemplate ? selectedTemplate.name : 'Пустая матрица'}
+                </p>
+              </div>
+            </div>
           </div>
 
           {matrixDescription && (
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Описание</h3>
-              <p className="text-sm">{matrixDescription}</p>
+              <h3 className="text-xs font-medium text-muted-foreground mb-1">Описание</h3>
+              <p className="text-sm text-muted-foreground">{matrixDescription}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Ось X</h3>
-              <p className="font-medium">{axisXName}</p>
+              <h3 className="text-xs font-medium text-muted-foreground mb-1">Ось X</h3>
+              <p className="text-sm">{axisXName}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Ось Y</h3>
-              <p className="font-medium">{axisYName}</p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Шаблон</h3>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Icon 
-                  name={selectedTemplate ? templateIcons[selectedTemplate.name] || 'Layers' : 'Plus'} 
-                  size={20} 
-                  className="text-primary" 
-                />
-              </div>
-              <p className="font-medium">
-                {selectedTemplate ? selectedTemplate.name : 'Пустая матрица (без шаблона)'}
-              </p>
+              <h3 className="text-xs font-medium text-muted-foreground mb-1">Ось Y</h3>
+              <p className="text-sm">{axisYName}</p>
             </div>
           </div>
 
-          {selectedTemplate && selectedTemplate.criteria && (
+          {selectedTemplate && selectedTemplate.criteria && selectedTemplate.criteria.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                Критерии из шаблона ({selectedTemplate.criteria.length})
-              </h3>
-              <div className="space-y-3">
-                {selectedTemplate.criteria
-                  .filter(c => c.axis === 'x')
-                  .slice(0, 3)
-                  .map((criterion, idx) => (
-                    <div key={idx} className="text-sm flex items-center gap-2">
-                      <Icon name="ChevronRight" size={14} className="text-muted-foreground" />
-                      <span>{criterion.name}</span>
+              <h3 className="text-xs font-medium text-muted-foreground mb-2">Критерии</h3>
+              <Dialog open={criteriaDialogOpen} onOpenChange={setCriteriaDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8">
+                    <Icon name="List" size={14} className="mr-2" />
+                    Критерии из шаблона ({selectedTemplate.criteria.length})
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Критерии оценки</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-3">Ось X - {axisXName}</h4>
+                      <div className="space-y-2">
+                        {selectedTemplate.criteria
+                          .filter(c => c.axis === 'x')
+                          .sort((a, b) => a.sort_order - b.sort_order)
+                          .map((criterion, idx) => (
+                            <div key={idx} className="p-3 bg-muted/50 rounded-lg">
+                              <div className="flex items-start justify-between mb-1">
+                                <p className="text-sm font-medium">{criterion.name}</p>
+                                <span className="text-xs text-muted-foreground">Вес: {criterion.weight}</span>
+                              </div>
+                              {criterion.hint && (
+                                <p className="text-xs text-muted-foreground">{criterion.hint}</p>
+                              )}
+                            </div>
+                          ))}
+                      </div>
                     </div>
-                  ))}
-                {selectedTemplate.criteria.filter(c => c.axis === 'x').length > 3 && (
-                  <p className="text-xs text-muted-foreground pl-5">
-                    и ещё {selectedTemplate.criteria.filter(c => c.axis === 'x').length - 3} критериев...
-                  </p>
-                )}
-              </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-3">Ось Y - {axisYName}</h4>
+                      <div className="space-y-2">
+                        {selectedTemplate.criteria
+                          .filter(c => c.axis === 'y')
+                          .sort((a, b) => a.sort_order - b.sort_order)
+                          .map((criterion, idx) => (
+                            <div key={idx} className="p-3 bg-muted/50 rounded-lg">
+                              <div className="flex items-start justify-between mb-1">
+                                <p className="text-sm font-medium">{criterion.name}</p>
+                                <span className="text-xs text-muted-foreground">Вес: {criterion.weight}</span>
+                              </div>
+                              {criterion.hint && (
+                                <p className="text-xs text-muted-foreground">{criterion.hint}</p>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">Правила квадрантов</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {quadrantRules.filter(r => r.quadrant !== 'archive').map((rule) => {
-                const labels: Record<string, string> = {
-                  focus: 'Фокус',
-                  monitor: 'Мониторить',
-                  grow: 'Выращивать'
-                };
+            <h3 className="text-xs font-medium text-muted-foreground mb-2">Правила квадрантов</h3>
+            <div className="grid grid-cols-2 gap-2 border border-border rounded-lg overflow-hidden">
+              {(['monitor', 'focus', 'archive', 'grow'] as const).map((quadrantKey) => {
+                const rule = quadrantRules.find(r => r.quadrant === quadrantKey);
+                if (!rule) return null;
+                const config = QUADRANT_CONFIG[quadrantKey];
                 return (
-                  <div key={rule.quadrant} className="text-sm p-3 bg-muted/50 rounded-lg">
-                    <div className="font-medium mb-1">{labels[rule.quadrant]}</div>
+                  <div 
+                    key={quadrantKey}
+                    className="p-4 bg-card border-border flex flex-col items-center justify-center text-center min-h-[100px]"
+                    style={{
+                      borderRight: quadrantKey === 'monitor' || quadrantKey === 'archive' ? '1px solid hsl(var(--border))' : 'none',
+                      borderBottom: quadrantKey === 'monitor' || quadrantKey === 'focus' ? '1px solid hsl(var(--border))' : 'none'
+                    }}
+                  >
+                    <Icon name={config.icon} size={20} className={`${config.color} mb-2`} />
+                    <div className="text-sm font-medium mb-1">{config.label}</div>
                     <div className="text-xs text-muted-foreground">
-                      X ≥ {rule.x_min} {rule.x_operator === 'AND' ? 'и' : 'или'} Y ≥ {rule.y_min}
+                      {quadrantKey === 'archive' ? (
+                        'Остальные'
+                      ) : (
+                        <>
+                          X ≥ {rule.x_min}
+                          <br />
+                          {rule.x_operator === 'AND' ? 'и' : 'или'} Y ≥ {rule.y_min}
+                        </>
+                      )}
                     </div>
                   </div>
                 );
               })}
-              <div className="text-sm p-3 bg-muted/50 rounded-lg col-span-2">
-                <div className="font-medium mb-1">Архив</div>
-                <div className="text-xs text-muted-foreground">
-                  Все остальные клиенты
-                </div>
-              </div>
             </div>
           </div>
         </div>
