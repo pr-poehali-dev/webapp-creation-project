@@ -1,0 +1,18 @@
+{
+  "tests": [
+    {
+      "name": "Test invalid credentials",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "username": "nonexistent",
+        "password": "wrongpassword"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

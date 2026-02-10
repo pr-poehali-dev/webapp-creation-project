@@ -1,4 +1,6 @@
 {
+  "admin-organizations": "https://functions.poehali.dev/27c59523-c1ea-424b-a922-e5af28d26e5e",
+  "crmadminauth": "https://functions.poehali.dev/d5fb271b-2690-4412-94b1-4b54d4294ebe",
   "telegram-bot": "https://functions.poehali.dev/5454ca3d-e34b-4545-93c4-47cbeccf3d5a",
   "create-user": "https://functions.poehali.dev/9f41e955-72a6-447c-aaae-4b5ea1b0c30a",
   "deal-statuses": "https://functions.poehali.dev/7a876a8c-dc4a-439e-aef5-23bde46d9fc2",

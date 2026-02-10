@@ -20,6 +20,8 @@ import ClientsDeleted from "./pages/ClientsDeleted";
 import Export from "./pages/Export";
 import Import from "./pages/Import";
 import Settings from "./pages/Settings";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,8 @@ const App = () => (
           <Route path="/export" element={<Export />} />
           <Route path="/import" element={<Import />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/crmadminauth" element={<AdminLogin />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
