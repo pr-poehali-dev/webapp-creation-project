@@ -19,9 +19,11 @@ def handler(event: dict, context) -> dict:
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, X-Authorization'
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Authorization',
+                'Access-Control-Max-Age': '86400'
             },
-            'body': ''
+            'body': '',
+            'isBase64Encoded': False
         }
     
     token = event.get('headers', {}).get('X-Authorization', '').replace('Bearer ', '')
@@ -29,7 +31,8 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Требуется авторизация'})
+            'body': json.dumps({'error': 'Требуется авторизация'}),
+            'isBase64Encoded': False
         }
     
     try:
@@ -41,14 +44,16 @@ def handler(event: dict, context) -> dict:
         return {
             'statusCode': 401,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Неверный токен'})
+            'body': json.dumps({'error': 'Неверный токен'}),
+            'isBase64Encoded': False
         }
     
     if method != 'POST':
         return {
             'statusCode': 405,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Метод не поддерживается'})
+            'body': json.dumps({'error': 'Метод не поддерживается'}),
+            'isBase64Encoded': False
         }
     
     try:
@@ -67,13 +72,15 @@ def handler(event: dict, context) -> dict:
             return {
                 'statusCode': 400,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Неизвестное действие'})
+                'body': json.dumps({'error': 'Неизвестное действие'}),
+                'isBase64Encoded': False
             }
     except Exception as e:
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e)}),
+            'isBase64Encoded': False
         }
 
 def export_csv(organization_id: int, body: dict) -> dict:
@@ -154,7 +161,8 @@ def export_csv(organization_id: int, body: dict) -> dict:
             'filename': filename,
             'content': csv_base64,
             'total': len(rows)
-        })
+        }),
+        'isBase64Encoded': False
     }
 
 def export_excel(organization_id: int, body: dict) -> dict:
@@ -285,7 +293,8 @@ def export_excel(organization_id: int, body: dict) -> dict:
             'filename': filename,
             'content': excel_base64,
             'total': len(rows)
-        })
+        }),
+        'isBase64Encoded': False
     }
 
 def export_bitrix(organization_id: int, body: dict) -> dict:
@@ -343,7 +352,8 @@ def export_bitrix(organization_id: int, body: dict) -> dict:
             'format': 'bitrix24',
             'leads': bitrix_data,
             'total': len(bitrix_data)
-        })
+        }),
+        'isBase64Encoded': False
     }
 
 def export_amocrm(organization_id: int, body: dict) -> dict:
@@ -407,5 +417,6 @@ def export_amocrm(organization_id: int, body: dict) -> dict:
             'format': 'amocrm',
             'leads': amo_data,
             'total': len(amo_data)
-        })
+        }),
+        'isBase64Encoded': False
     }
