@@ -56,9 +56,9 @@ export default function AdminDashboard() {
     subscription_tier: 'free',
     subscription_start_date: new Date().toISOString().split('T')[0],
     subscription_end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    users_limit: 0,
-    matrices_limit: 0,
-    clients_limit: 0,
+    users_limit: 3,
+    matrices_limit: 1,
+    clients_limit: 10,
   });
 
   const getTierLimits = (tier: string) => {
