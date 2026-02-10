@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 
-const ADMIN_AUTH_URL = import.meta.env.VITE_ADMIN_AUTH_URL || '/api/crmadminauth';
+const ADMIN_AUTH_URL = import.meta.env.VITE_ADMIN_AUTH_URL || 'https://functions.poehali.dev/d5fb271b-2690-4412-94b1-4b54d4294ebe';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
