@@ -34,13 +34,26 @@ def verify_admin_password(username: str, password: str) -> dict:
         admin_id, admin_username, password_hash = result
         print(f"[DEBUG] Found user: {admin_username}, hash type: {type(password_hash)}")
         
+        # ВРЕМЕННО: генерируем новый хеш и сравниваем
+        test_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        print(f"[DEBUG] Generated test hash: {test_hash.decode('utf-8')}")
+        print(f"[DEBUG] DB hash: {password_hash}")
+        
         # Проверить пароль - хеш из базы уже строка, конвертируем в bytes
         password_bytes = password.encode('utf-8')
         hash_bytes = password_hash.encode('utf-8') if isinstance(password_hash, str) else password_hash
         
         print(f"[DEBUG] Password length: {len(password)}, Hash length: {len(hash_bytes)}")
+        print(f"[DEBUG] Attempting bcrypt.checkpw...")
         
-        if bcrypt.checkpw(password_bytes, hash_bytes):
+        try:
+            result_check = bcrypt.checkpw(password_bytes, hash_bytes)
+            print(f"[DEBUG] bcrypt.checkpw result: {result_check}")
+        except Exception as check_err:
+            print(f"[ERROR] bcrypt.checkpw failed: {check_err}")
+            return None
+        
+        if result_check:
             print(f"[DEBUG] Password verified successfully for {admin_username}")
             return {
                 'id': admin_id,
@@ -52,6 +65,8 @@ def verify_admin_password(username: str, password: str) -> dict:
         
     except Exception as e:
         print(f"[ERROR] verify_admin_password exception: {e}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         return None
         
     finally:
