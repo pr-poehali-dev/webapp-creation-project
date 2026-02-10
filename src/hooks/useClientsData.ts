@@ -17,6 +17,8 @@ export interface Client {
   deal_status_id: number | null;
   deal_status_name: string | null;
   deal_status_weight: number | null;
+  responsible_user_id: number | null;
+  responsible_user_name: string | null;
 }
 
 export interface DealStatus {

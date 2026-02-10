@@ -67,10 +67,12 @@ def handler(event: dict, context) -> dict:
                 SELECT c.id, c.company_name, c.contact_person, c.email, c.phone,
                        c.description, c.score_x, c.score_y, c.quadrant,
                        c.matrix_id, m.name as matrix_name, c.created_at,
-                       c.deal_status_id, ds.name as deal_status_name, ds.weight as deal_status_weight
+                       c.deal_status_id, ds.name as deal_status_name, ds.weight as deal_status_weight,
+                       c.responsible_user_id, u.full_name as responsible_user_name
                 FROM clients c
                 LEFT JOIN matrices m ON c.matrix_id = m.id
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
+                LEFT JOIN users u ON c.responsible_user_id = u.id
                 WHERE c.organization_id = %s AND c.is_active = true AND c.deleted_at IS NULL
             """
             params = [organization_id]
@@ -107,7 +109,9 @@ def handler(event: dict, context) -> dict:
                     'created_at': row[11].isoformat() if row[11] else None,
                     'deal_status_id': row[12],
                     'deal_status_name': row[13],
-                    'deal_status_weight': row[14]
+                    'deal_status_weight': row[14],
+                    'responsible_user_id': row[15],
+                    'responsible_user_name': row[16]
                 })
             
             return {
@@ -130,10 +134,12 @@ def handler(event: dict, context) -> dict:
                 SELECT c.id, c.company_name, c.contact_person, c.email, c.phone,
                        c.description, c.notes, c.score_x, c.score_y, c.quadrant,
                        c.matrix_id, m.name as matrix_name, c.deal_status_id,
-                       ds.name as deal_status_name, ds.weight as deal_status_weight
+                       ds.name as deal_status_name, ds.weight as deal_status_weight,
+                       c.responsible_user_id, u.full_name as responsible_user_name
                 FROM clients c
                 LEFT JOIN matrices m ON c.matrix_id = m.id
                 LEFT JOIN deal_statuses ds ON c.deal_status_id = ds.id
+                LEFT JOIN users u ON c.responsible_user_id = u.id
                 WHERE c.id = %s AND c.organization_id = %s AND c.is_active = true AND c.deleted_at IS NULL
             """, (client_id, organization_id))
             
@@ -186,6 +192,8 @@ def handler(event: dict, context) -> dict:
                 'deal_status_id': row[12],
                 'deal_status_name': row[13],
                 'deal_status_weight': row[14],
+                'responsible_user_id': row[15],
+                'responsible_user_name': row[16],
                 'scores': scores
             }
             
@@ -212,8 +220,8 @@ def handler(event: dict, context) -> dict:
             
             cur.execute("""
                 INSERT INTO clients (organization_id, matrix_id, company_name, contact_person, 
-                                     email, phone, description, notes, deal_status_id, created_by)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                     email, phone, description, notes, deal_status_id, created_by, responsible_user_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             """, (
                 organization_id,
@@ -225,6 +233,7 @@ def handler(event: dict, context) -> dict:
                 body.get('description'),
                 body.get('notes'),
                 deal_status_id,
+                user_id,
                 user_id
             ))
             
@@ -310,6 +319,9 @@ def handler(event: dict, context) -> dict:
             if 'deal_status_id' in body:
                 update_fields.append("deal_status_id = %s")
                 update_values.append(body['deal_status_id'])
+            if 'responsible_user_id' in body:
+                update_fields.append("responsible_user_id = %s")
+                update_values.append(body['responsible_user_id'])
             
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             

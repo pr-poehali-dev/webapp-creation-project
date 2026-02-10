@@ -54,7 +54,16 @@ interface Client {
   matrix_name: string;
   deal_status_id: number | null;
   deal_status_name: string | null;
+  responsible_user_id: number | null;
+  responsible_user_name: string | null;
   scores: Score[];
+}
+
+interface User {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
 }
 
 interface DealStatus {
@@ -71,11 +80,13 @@ const ClientEdit = () => {
   const [saving, setSaving] = useState(false);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [dealStatuses, setDealStatuses] = useState<DealStatus[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [error, setError] = useState('');
   const [client, setClient] = useState<Client | null>(null);
   const [questionnaireOpen, setQuestionnaireOpen] = useState(false);
   const [reassessMode, setReassessMode] = useState(false);
+  const [userRole, setUserRole] = useState('');
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -86,6 +97,7 @@ const ClientEdit = () => {
     notes: '',
     matrix_id: '',
     deal_status_id: '',
+    responsible_user_id: '',
   });
 
   const [scores, setScores] = useState<Score[]>([]);
@@ -97,9 +109,16 @@ const ClientEdit = () => {
       return;
     }
 
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUserRole(parsedUser.role || '');
+    }
+
     fetchClient();
     fetchMatrices();
     fetchDealStatuses();
+    fetchUsers();
   }, [navigate, id]);
 
   const fetchClient = async () => {
@@ -126,6 +145,7 @@ const ClientEdit = () => {
           notes: data.client.notes || '',
           matrix_id: data.client.matrix_id?.toString() || '',
           deal_status_id: data.client.deal_status_id?.toString() || '',
+          responsible_user_id: data.client.responsible_user_id?.toString() || '',
         });
         setScores(data.client.scores || []);
 
@@ -175,6 +195,24 @@ const ClientEdit = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки статусов сделок:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/e31e3e4c-0a81-48d5-82da-b14d464e95a8', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setUsers(data.users);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки пользователей:', error);
     }
   };
 
@@ -231,6 +269,7 @@ const ClientEdit = () => {
           ...formData,
           matrix_id: formData.matrix_id ? parseInt(formData.matrix_id) : null,
           deal_status_id: formData.deal_status_id ? parseInt(formData.deal_status_id) : null,
+          responsible_user_id: formData.responsible_user_id ? parseInt(formData.responsible_user_id) : null,
           scores: formData.matrix_id ? scores : [],
         }),
       });
@@ -370,11 +409,15 @@ const ClientEdit = () => {
               client={client}
               matrixId={formData.matrix_id}
               dealStatusId={formData.deal_status_id}
+              responsibleUserId={formData.responsible_user_id}
               matrices={matrices}
               dealStatuses={dealStatuses}
+              users={users}
               hasScores={scores.length > 0}
+              canAssignResponsible={['owner', 'admin', 'manager'].includes(userRole)}
               onMatrixChange={handleMatrixChange}
               onDealStatusChange={(value) => setFormData({ ...formData, deal_status_id: value })}
+              onResponsibleChange={(value) => setFormData({ ...formData, responsible_user_id: value })}
               onStartQuestionnaire={handleStartQuestionnaire}
               onReassess={handleReassess}
             />

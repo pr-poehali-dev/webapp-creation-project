@@ -35,27 +35,27 @@ const ClientEditHeader = ({ client, onDelete, onSave, saving }: ClientEditHeader
 
   return (
     <header className="border-b border-border bg-card">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/clients')}>
+      <div className="container mx-auto px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/clients')} className="flex-shrink-0">
               <Icon name="ArrowLeft" size={20} />
             </Button>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold">{client?.company_name}</h1>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-2xl font-bold truncate">{client?.company_name}</h1>
                 {client?.quadrant && (
-                  <Badge className={getQuadrantConfig(client.quadrant).color}>
+                  <Badge className={`${getQuadrantConfig(client.quadrant).color} text-xs whitespace-nowrap`}>
                     {getQuadrantConfig(client.quadrant).label}
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">Редактирование информации о клиенте</p>
+              <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Редактирование информации о клиенте</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button 
-              className="gradient-primary" 
+              className="gradient-primary hidden sm:flex" 
               onClick={onSave}
               disabled={saving}
             >
@@ -71,9 +71,24 @@ const ClientEditHeader = ({ client, onDelete, onSave, saving }: ClientEditHeader
                 </>
               )}
             </Button>
-            <Button variant="destructive" onClick={onDelete}>
+            <Button 
+              className="gradient-primary sm:hidden" 
+              size="icon"
+              onClick={onSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <Icon name="Loader2" size={20} className="animate-spin" />
+              ) : (
+                <Icon name="Save" size={20} />
+              )}
+            </Button>
+            <Button variant="destructive" onClick={onDelete} className="hidden sm:flex">
               <Icon name="Trash2" size={20} className="mr-2" />
               Удалить
+            </Button>
+            <Button variant="destructive" size="icon" onClick={onDelete} className="sm:hidden">
+              <Icon name="Trash2" size={20} />
             </Button>
           </div>
         </div>

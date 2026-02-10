@@ -6,6 +6,8 @@ interface Client {
   score_x: number;
   score_y: number;
   matrix_name: string | null;
+  responsible_user_id: number | null;
+  responsible_user_name: string | null;
 }
 
 interface Matrix {
@@ -20,15 +22,26 @@ interface DealStatus {
   sort_order: number;
 }
 
+interface User {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+}
+
 interface ClientPositionCardProps {
   client: Client;
   matrixId: string;
   dealStatusId: string;
+  responsibleUserId: string;
   matrices: Matrix[];
   dealStatuses: DealStatus[];
+  users: User[];
   hasScores: boolean;
+  canAssignResponsible: boolean;
   onMatrixChange: (value: string) => void;
   onDealStatusChange: (value: string) => void;
+  onResponsibleChange: (value: string) => void;
   onStartQuestionnaire: () => void;
   onReassess: () => void;
 }
@@ -37,11 +50,15 @@ const ClientPositionCard = ({
   client, 
   matrixId, 
   dealStatusId,
+  responsibleUserId,
   matrices,
   dealStatuses,
+  users,
   hasScores,
+  canAssignResponsible,
   onMatrixChange,
   onDealStatusChange,
+  onResponsibleChange,
   onStartQuestionnaire,
   onReassess
 }: ClientPositionCardProps) => {
@@ -103,7 +120,32 @@ const ClientPositionCard = ({
           </div>
         </div>
 
-        {client.score_x > 0 && client.score_y > 0 && (
+        <div>
+          <label htmlFor="responsible_user_id" className="block text-sm font-medium mb-2">
+            Ответственный
+          </label>
+          <select
+            id="responsible_user_id"
+            value={responsibleUserId}
+            onChange={(e) => onResponsibleChange(e.target.value)}
+            disabled={!canAssignResponsible}
+            className="w-full px-3 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="">Не назначен</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.full_name} ({user.role})
+              </option>
+            ))}
+          </select>
+          {!canAssignResponsible && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Только владелец, администратор или руководитель могут назначать ответственных
+            </p>
+          )}
+        </div>
+
+        {matrixId && client.score_x > 0 && client.score_y > 0 && (
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Влияние (X)</p>
