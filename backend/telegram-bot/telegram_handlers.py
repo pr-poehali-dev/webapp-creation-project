@@ -7,7 +7,8 @@ import jwt
 import base64
 from telegram_api import send_message, send_message_with_buttons, answer_callback_query
 from db_helpers import get_user_by_telegram_id, link_user_telegram, create_support_thread
-from fsm_client import start_client_creation, handle_fsm_message, cancel_client_creation
+from fsm_client import start_client_creation, handle_fsm_message, cancel_client_creation, save_client_without_assessment, get_user_state
+from fsm_assessment import start_assessment, handle_criterion_score, cancel_assessment
 
 
 def verify_jwt_token(token: str):
@@ -188,6 +189,34 @@ def handle_callback(chat_id: int, telegram_id: int, callback_data: str, message_
     
     elif callback_data == 'cancel_client':
         cancel_client_creation(chat_id, telegram_id)
+        answer_callback_query(telegram_id)
+    
+    elif callback_data.startswith('matrix_'):
+        # Выбор матрицы для оценки: matrix_123
+        matrix_id = int(callback_data.split('_')[1])
+        start_assessment(chat_id, telegram_id, matrix_id)
+        answer_callback_query(telegram_id)
+    
+    elif callback_data == 'skip_assessment':
+        # Пропустить оценку и сохранить клиента
+        state_data = get_user_state(telegram_id)
+        if state_data:
+            data = state_data.get('data', {})
+            save_client_without_assessment(chat_id, telegram_id, data, data.get('description'))
+        answer_callback_query(telegram_id)
+    
+    elif callback_data.startswith('score_'):
+        # Оценка критерия: score_criterion_id_status_id_weight
+        parts = callback_data.split('_')
+        if len(parts) == 4:
+            criterion_id = int(parts[1])
+            status_id = int(parts[2])
+            weight = int(parts[3])
+            handle_criterion_score(chat_id, telegram_id, criterion_id, status_id, weight)
+        answer_callback_query(telegram_id)
+    
+    elif callback_data == 'cancel_assessment':
+        cancel_assessment(chat_id, telegram_id)
         answer_callback_query(telegram_id)
     
     elif callback_data == 'how_to_link':
