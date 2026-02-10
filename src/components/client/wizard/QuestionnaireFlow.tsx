@@ -124,7 +124,7 @@ const QuestionnaireFlow = ({
         </div>
       </div>
 
-      <Card className="p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+      <Card key={`question-${currentCriterion.id}`} className="p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
         <div className="mb-4 sm:mb-6">
           <Badge className={`text-xs sm:text-sm mb-2 sm:mb-3 ${getAxisColor(currentCriterion.axis)}`}>
             {getAxisLabel(currentCriterion.axis)}
@@ -142,7 +142,7 @@ const QuestionnaireFlow = ({
                 const isSelected = selectedStatuses.get(currentCriterion.id) === status.id;
                 return (
                   <Card
-                    key={`${currentCriterion.id}-${status.id}`}
+                    key={status.id}
                     onClick={() => handleStatusSelect(status.id, status.weight)}
                     className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-md active:scale-95 ${
                       isSelected 
