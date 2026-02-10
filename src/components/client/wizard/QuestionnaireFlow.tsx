@@ -60,6 +60,16 @@ const QuestionnaireFlow = ({
     setScores(scores.map(s => 
       s.criterion_id === currentCriterion.id ? { ...s, score: weight } : s
     ));
+    
+    setTimeout(() => {
+      if (currentIndex < criteria.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        onComplete(scores.map(s => 
+          s.criterion_id === currentCriterion.id ? { ...s, score: weight } : s
+        ));
+      }
+    }, 300);
   };
 
   // Автоматически выбираем первый статус для текущего критерия
