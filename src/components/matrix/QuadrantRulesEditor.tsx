@@ -37,33 +37,25 @@ const QUADRANT_CONFIG = {
   focus: {
     label: 'Фокус',
     icon: 'Target',
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
+    color: 'text-green-500',
     description: 'Клиенты с высоким приоритетом'
   },
   monitor: {
     label: 'Мониторить',
     icon: 'Eye',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
+    color: 'text-blue-500',
     description: 'Клиенты требующие наблюдения'
   },
   grow: {
     label: 'Выращивать',
     icon: 'TrendingUp',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200',
+    color: 'text-yellow-500',
     description: 'Клиенты с потенциалом роста'
   },
   archive: {
     label: 'Архив',
     icon: 'Archive',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
+    color: 'text-gray-500',
     description: 'Остальные клиенты'
   }
 };
@@ -151,88 +143,64 @@ export const QuadrantRulesEditor = ({
         </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {editableQuadrants.map((rule) => {
           const config = QUADRANT_CONFIG[rule.quadrant];
           return (
             <Card 
               key={rule.quadrant} 
-              className={`p-5 border-2 ${config.borderColor} ${config.bgColor}`}
+              className="p-4 bg-card border-border"
             >
-              <div className="flex items-start gap-4">
-                <div className={`w-10 h-10 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0 border ${config.borderColor}`}>
-                  <Icon name={config.icon} size={20} className={config.color} />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Icon name={config.icon} size={18} className={config.color} />
                 </div>
                 
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold">{config.label}</h4>
-                      <span className="text-xs text-muted-foreground px-2 py-0.5 bg-background/60 rounded">
-                        Приоритет {rule.priority}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{config.description}</p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-medium text-sm">{config.label}</h4>
+                    <span className="text-xs text-muted-foreground">· {config.description}</span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">Ось X (минимум)</Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">≥</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={maxScore}
-                          step={0.5}
-                          value={rule.x_min}
-                          onChange={(e) => updateRule(rule.quadrant, 'x_min', parseFloat(e.target.value) || 0)}
-                          className="flex-1"
-                        />
-                        <span className="text-sm text-muted-foreground">баллов</span>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">X более или равно</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={maxScore}
+                        step={0.5}
+                        value={rule.x_min}
+                        onChange={(e) => updateRule(rule.quadrant, 'x_min', parseFloat(e.target.value) || 0)}
+                        className="w-16 h-8 text-sm"
+                      />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs">Ось Y (минимум)</Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">≥</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={maxScore}
-                          step={0.5}
-                          value={rule.y_min}
-                          onChange={(e) => updateRule(rule.quadrant, 'y_min', parseFloat(e.target.value) || 0)}
-                          className="flex-1"
-                        />
-                        <span className="text-sm text-muted-foreground">баллов</span>
-                      </div>
-                    </div>
+                    <Select
+                      value={rule.x_operator}
+                      onValueChange={(value) => updateRule(rule.quadrant, 'x_operator', value)}
+                    >
+                      <SelectTrigger className="w-20 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AND">И</SelectItem>
+                        <SelectItem value="OR">ИЛИ</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs">Условие</Label>
-                      <Select
-                        value={rule.x_operator}
-                        onValueChange={(value) => updateRule(rule.quadrant, 'x_operator', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="AND">И (оба условия)</SelectItem>
-                          <SelectItem value="OR">ИЛИ (любое условие)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground whitespace-nowrap">Y более или равно</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={maxScore}
+                        step={0.5}
+                        value={rule.y_min}
+                        onChange={(e) => updateRule(rule.quadrant, 'y_min', parseFloat(e.target.value) || 0)}
+                        className="w-16 h-8 text-sm"
+                      />
                     </div>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground bg-background/60 p-3 rounded">
-                    <Icon name="Info" size={14} className="inline mr-1" />
-                    {rule.x_operator === 'AND' 
-                      ? `Клиент попадёт в "${config.label}", если X ≥ ${rule.x_min} И Y ≥ ${rule.y_min}`
-                      : `Клиент попадёт в "${config.label}", если X ≥ ${rule.x_min} ИЛИ Y ≥ ${rule.y_min}`
-                    }
                   </div>
                 </div>
               </div>
@@ -241,41 +209,32 @@ export const QuadrantRulesEditor = ({
         })}
 
         {archiveRule && (
-          <Card className={`p-5 border-2 ${QUADRANT_CONFIG.archive.borderColor} ${QUADRANT_CONFIG.archive.bgColor}`}>
-            <div className="flex items-start gap-4">
-              <div className={`w-10 h-10 rounded-lg ${QUADRANT_CONFIG.archive.bgColor} flex items-center justify-center flex-shrink-0 border ${QUADRANT_CONFIG.archive.borderColor}`}>
-                <Icon name={QUADRANT_CONFIG.archive.icon} size={20} className={QUADRANT_CONFIG.archive.color} />
+          <Card className="p-4 bg-card border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Icon name={QUADRANT_CONFIG.archive.icon} size={18} className={QUADRANT_CONFIG.archive.color} />
               </div>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold">{QUADRANT_CONFIG.archive.label}</h4>
-                  <span className="text-xs text-muted-foreground px-2 py-0.5 bg-background/60 rounded">
-                    Приоритет {archiveRule.priority}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-sm">{QUADRANT_CONFIG.archive.label}</h4>
+                  <span className="text-xs text-muted-foreground">· {QUADRANT_CONFIG.archive.description}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">{QUADRANT_CONFIG.archive.description}</p>
-                <div className="text-xs text-muted-foreground bg-background/60 p-3 rounded">
-                  <Icon name="Info" size={14} className="inline mr-1" />
+                <p className="text-xs text-muted-foreground mt-1">
                   Все клиенты, не попавшие в другие квадранты, автоматически попадут в архив
-                </div>
+                </p>
               </div>
             </div>
           </Card>
         )}
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <Icon name="Lightbulb" size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-900">
-            <p className="font-medium mb-1">Как работает распределение?</p>
-            <p className="text-blue-700">
-              Правила проверяются последовательно по приоритету (1→2→3→4). 
-              Клиент попадает в первый подходящий квадрант. 
-              Если не подходит ни одно правило — попадает в Архив.
-            </p>
-          </div>
+      <div className="bg-muted/50 border border-border rounded-lg p-3">
+        <div className="flex items-start gap-2">
+          <Icon name="Info" size={16} className="text-muted-foreground flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">
+            Клиенты проверяются по приоритету (Фокус → Мониторить → Выращивать → Архив). Первое совпадение определяет квадрант.
+          </p>
         </div>
       </div>
     </div>
