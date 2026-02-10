@@ -45,12 +45,14 @@ export const useClientsData = () => {
   const [loading, setLoading] = useState(true);
   const [selectedQuadrant, setSelectedQuadrant] = useState<string>('');
   const [filterDealStatus, setFilterDealStatus] = useState<string>('');
+  const [filterResponsibleUser, setFilterResponsibleUser] = useState<string>('');
   const [hasMatrices, setHasMatrices] = useState(true);
   const [showList, setShowList] = useState(false);
   const [viewMode, setViewMode] = useState<'matrices' | 'unrated' | 'kanban'>('matrices');
   const [unratedClients, setUnratedClients] = useState<Client[]>([]);
   const [userRole, setUserRole] = useState<string>('');
   const [kanbanClients, setKanbanClients] = useState<Client[]>([]);
+  const [users, setUsers] = useState<Array<{ id: number; full_name: string; email: string; role: string }>>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -69,6 +71,7 @@ export const useClientsData = () => {
     checkMatrices();
     fetchDealStatuses();
     fetchUnratedClients();
+    fetchUsers();
   }, [navigate]);
 
   useEffect(() => {
@@ -78,12 +81,12 @@ export const useClientsData = () => {
   }, [selectedMatrix]);
 
   useEffect(() => {
-    if (selectedQuadrant || filterDealStatus) {
+    if (selectedQuadrant || filterDealStatus || filterResponsibleUser) {
       filterClients();
     } else {
       setClients(allClients);
     }
-  }, [selectedQuadrant, filterDealStatus, allClients]);
+  }, [selectedQuadrant, filterDealStatus, filterResponsibleUser, allClients]);
 
   useEffect(() => {
     if (viewMode === 'unrated') {
@@ -197,6 +200,10 @@ export const useClientsData = () => {
       filtered = filtered.filter(c => c.deal_status_id === parseInt(filterDealStatus));
     }
 
+    if (filterResponsibleUser) {
+      filtered = filtered.filter(c => c.responsible_user_id === parseInt(filterResponsibleUser));
+    }
+
     setClients(filtered);
   };
 
@@ -220,6 +227,24 @@ export const useClientsData = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки клиентов для канбана:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/e31e3e4c-0a81-48d5-82da-b14d464e95a8', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setUsers(data.users);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки пользователей:', error);
     }
   };
 
@@ -265,6 +290,8 @@ export const useClientsData = () => {
     setSelectedQuadrant,
     filterDealStatus,
     setFilterDealStatus,
+    filterResponsibleUser,
+    setFilterResponsibleUser,
     hasMatrices,
     showList,
     setShowList,
@@ -274,5 +301,6 @@ export const useClientsData = () => {
     userRole,
     kanbanClients,
     handleStatusChange,
+    users,
   };
 };

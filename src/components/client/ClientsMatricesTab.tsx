@@ -8,6 +8,13 @@ import ClientsListView from '@/components/client/ClientsListView';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Client, Matrix, DealStatus } from '@/hooks/useClientsData';
 
+interface User {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+}
+
 interface ClientsMatricesTabProps {
   hasMatrices: boolean;
   matrices: Matrix[];
@@ -20,8 +27,11 @@ interface ClientsMatricesTabProps {
   setSelectedQuadrant: (quadrant: string) => void;
   filterDealStatus: string;
   setFilterDealStatus: (status: string) => void;
+  filterResponsibleUser: string;
+  setFilterResponsibleUser: (user: string) => void;
   clients: Client[];
   dealStatuses: DealStatus[];
+  users: User[];
   onClientClick: (id: number) => void;
   onQuadrantClick: (quadrant: string) => void;
   onBackToMatrix: () => void;
@@ -39,8 +49,11 @@ const ClientsMatricesTab = ({
   selectedQuadrant,
   filterDealStatus,
   setFilterDealStatus,
+  filterResponsibleUser,
+  setFilterResponsibleUser,
   clients,
   dealStatuses,
+  users,
   onClientClick,
   onQuadrantClick,
   onBackToMatrix,
@@ -106,18 +119,33 @@ const ClientsMatricesTab = ({
                   Вернуться к матрице
                 </Button>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Icon name="Filter" size={20} className="text-muted-foreground" />
                     <select
                       value={filterDealStatus}
                       onChange={(e) => setFilterDealStatus(e.target.value)}
-                      className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     >
-                      <option value="">Все статусы сделок</option>
+                      <option value="">Все статусы</option>
                       {dealStatuses.map((status) => (
                         <option key={status.id} value={status.id}>
                           {status.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Icon name="UserCheck" size={20} className="text-muted-foreground" />
+                    <select
+                      value={filterResponsibleUser}
+                      onChange={(e) => setFilterResponsibleUser(e.target.value)}
+                      className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    >
+                      <option value="">Все ответственные</option>
+                      {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.full_name}
                         </option>
                       ))}
                     </select>

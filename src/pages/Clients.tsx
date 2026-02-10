@@ -21,6 +21,8 @@ const Clients = () => {
     setSelectedQuadrant,
     filterDealStatus,
     setFilterDealStatus,
+    filterResponsibleUser,
+    setFilterResponsibleUser,
     hasMatrices,
     showList,
     setShowList,
@@ -30,6 +32,7 @@ const Clients = () => {
     userRole,
     kanbanClients,
     handleStatusChange,
+    users,
   } = useClientsData();
 
   const handleQuadrantClick = (quadrant: string) => {
@@ -40,6 +43,7 @@ const Clients = () => {
   const handleBackToMatrix = () => {
     setSelectedQuadrant('');
     setFilterDealStatus('');
+    setFilterResponsibleUser('');
     setShowList(false);
   };
 
@@ -106,8 +110,11 @@ const Clients = () => {
               setSelectedQuadrant={setSelectedQuadrant}
               filterDealStatus={filterDealStatus}
               setFilterDealStatus={setFilterDealStatus}
+              filterResponsibleUser={filterResponsibleUser}
+              setFilterResponsibleUser={setFilterResponsibleUser}
               clients={clients}
               dealStatuses={dealStatuses}
+              users={users}
               onClientClick={handleClientClick}
               onQuadrantClick={handleQuadrantClick}
               onBackToMatrix={handleBackToMatrix}

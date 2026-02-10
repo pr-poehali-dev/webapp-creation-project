@@ -257,6 +257,15 @@ const KanbanBoard = ({ clients, dealStatuses, onStatusChange, onClientClick }: K
                               <Icon name="GripVertical" size={16} className="text-muted-foreground flex-shrink-0" />
                             </div>
                             
+                            {client.responsible_user_name && (
+                              <div className="flex items-center gap-1">
+                                <Icon name="UserCheck" size={12} className="text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {client.responsible_user_name}
+                                </span>
+                              </div>
+                            )}
+
                             {client.matrix_name && (
                               <div className="flex items-center gap-1">
                                 <Icon name="Grid3x3" size={12} className="text-muted-foreground" />

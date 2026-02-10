@@ -18,6 +18,8 @@ interface Client {
   deal_status_id: number | null;
   deal_status_name: string | null;
   deal_status_weight: number | null;
+  responsible_user_id: number | null;
+  responsible_user_name: string | null;
 }
 
 interface ClientsListViewProps {
@@ -59,6 +61,12 @@ const ClientsListView = ({ clients, onClientClick, getQuadrantConfig }: ClientsL
             )}
 
             <div className="space-y-2 mb-4">
+              {client.responsible_user_name && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Icon name="UserCheck" size={14} />
+                  <span className="truncate">{client.responsible_user_name}</span>
+                </div>
+              )}
               {client.email && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Icon name="Mail" size={14} />
