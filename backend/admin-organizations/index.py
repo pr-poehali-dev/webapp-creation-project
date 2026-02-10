@@ -163,14 +163,18 @@ def create_organization(data: dict):
         password_hash = bcrypt.hashpw(owner_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         print(f"[DEBUG] Creating owner user: {owner_username}")
         
+        # email и full_name обязательны (NOT NULL)
+        owner_email = f"{owner_username}@temp.local"
+        owner_full_name = name
+        
         cur.execute(
             """
             INSERT INTO users 
-            (username, password_hash, role, organization_id, is_active)
-            VALUES (%s, %s, 'owner', %s, true)
+            (username, email, full_name, password_hash, role, organization_id, is_active)
+            VALUES (%s, %s, %s, %s, 'owner', %s, true)
             RETURNING id
             """,
-            (owner_username, password_hash, org_id)
+            (owner_username, owner_email, owner_full_name, password_hash, org_id)
         )
         user_id = cur.fetchone()[0]
         print(f"[DEBUG] User created with id: {user_id}")
