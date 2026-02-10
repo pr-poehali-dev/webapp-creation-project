@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import ClientsMatrixView from '@/components/client/ClientsMatrixView';
 import ClientsListView from '@/components/client/ClientsListView';
+import KanbanBoard from '@/components/client/KanbanBoard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -53,9 +54,10 @@ const Clients = () => {
   const [filterDealStatus, setFilterDealStatus] = useState<string>('');
   const [hasMatrices, setHasMatrices] = useState(true);
   const [showList, setShowList] = useState(false);
-  const [viewMode, setViewMode] = useState<'matrices' | 'unrated'>('matrices');
+  const [viewMode, setViewMode] = useState<'matrices' | 'unrated' | 'kanban'>('matrices');
   const [unratedClients, setUnratedClients] = useState<Client[]>([]);
   const [userRole, setUserRole] = useState<string>('');
+  const [kanbanClients, setKanbanClients] = useState<Client[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -93,6 +95,8 @@ const Clients = () => {
   useEffect(() => {
     if (viewMode === 'unrated') {
       fetchUnratedClients();
+    } else if (viewMode === 'kanban') {
+      fetchAllClientsForKanban();
     }
   }, [viewMode]);
 
@@ -233,6 +237,59 @@ const Clients = () => {
     navigate(`/client/${id}`);
   };
 
+  const fetchAllClientsForKanban = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'list',
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setKanbanClients(data.clients);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки клиентов для канбана:', error);
+    }
+  };
+
+  const handleStatusChange = async (clientId: number, newStatusId: number | null) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://functions.poehali.dev/9347d703-acfe-4def-a4ae-a4a52329c037', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'update_status',
+          client_id: clientId,
+          deal_status_id: newStatusId,
+        }),
+      });
+
+      if (response.ok) {
+        setKanbanClients(prev => 
+          prev.map(c => 
+            c.id === clientId 
+              ? { ...c, deal_status_id: newStatusId } 
+              : c
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Ошибка изменения статуса:', error);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="border-b border-border bg-card/50">
@@ -269,11 +326,15 @@ const Clients = () => {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'matrices' | 'unrated')}>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'matrices' | 'unrated' | 'kanban')}>
           <TabsList className="mb-6">
             <TabsTrigger value="matrices" className="flex items-center gap-2">
               <Icon name="Grid3x3" size={16} />
               Матрицы ({matrices.length})
+            </TabsTrigger>
+            <TabsTrigger value="kanban" className="flex items-center gap-2">
+              <Icon name="Kanban" size={16} />
+              Канбан статусов
             </TabsTrigger>
             <TabsTrigger value="unrated" className="flex items-center gap-2">
               <Icon name="Users" size={16} />
@@ -389,6 +450,28 @@ const Clients = () => {
         )}
               </>
             )}
+      </TabsContent>
+
+      <TabsContent value="kanban">
+        <Card>
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center gap-3 mb-2">
+              <Icon name="Kanban" size={24} className="text-primary" />
+              <h2 className="text-xl font-semibold">Канбан статусов сделок</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Управляйте статусами сделок, перетаскивая карточки клиентов между колонками
+            </p>
+          </div>
+          <div className="p-6">
+            <KanbanBoard
+              clients={kanbanClients}
+              dealStatuses={dealStatuses}
+              onStatusChange={handleStatusChange}
+              onClientClick={handleClientClick}
+            />
+          </div>
+        </Card>
       </TabsContent>
 
       <TabsContent value="unrated">

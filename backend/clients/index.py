@@ -553,6 +553,46 @@ def handler(event: dict, context) -> dict:
                 'isBase64Encoded': False
             }
         
+        elif action == 'update_status':
+            client_id = body.get('client_id')
+            deal_status_id = body.get('deal_status_id')
+            
+            if not client_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'client_id обязателен'}),
+                    'isBase64Encoded': False
+                }
+            
+            cur.execute("""
+                SELECT id FROM clients 
+                WHERE id = %s AND organization_id = %s AND is_active = true AND deleted_at IS NULL
+            """, (client_id, organization_id))
+            
+            if not cur.fetchone():
+                return {
+                    'statusCode': 404,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Клиент не найден'}),
+                    'isBase64Encoded': False
+                }
+            
+            cur.execute("""
+                UPDATE clients 
+                SET deal_status_id = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (deal_status_id, client_id))
+            
+            conn.commit()
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'message': 'Статус сделки обновлен'}),
+                'isBase64Encoded': False
+            }
+        
         else:
             return {
                 'statusCode': 400,
