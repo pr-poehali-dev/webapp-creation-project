@@ -5,7 +5,10 @@ API для управления организациями в админ-пан�
 import json
 import os
 import jwt
+import bcrypt
 import psycopg2
+import secrets
+import string
 from datetime import datetime
 
 
@@ -46,6 +49,7 @@ def get_all_organizations():
                 o.matrices_limit,
                 o.clients_limit,
                 o.created_at,
+                o.status,
                 COUNT(DISTINCT u.id) as users_count,
                 COUNT(DISTINCT m.id) as matrices_count,
                 COUNT(DISTINCT c.id) as clients_count
@@ -55,7 +59,7 @@ def get_all_organizations():
             LEFT JOIN clients c ON c.organization_id = o.id AND c.is_active = true
             GROUP BY o.id, o.name, o.subscription_tier, o.subscription_start_date, 
                      o.subscription_end_date, o.users_limit, o.matrices_limit, 
-                     o.clients_limit, o.created_at
+                     o.clients_limit, o.created_at, o.status
             ORDER BY o.created_at DESC
             """
         )
@@ -72,13 +76,90 @@ def get_all_organizations():
                 'matrices_limit': row[6],
                 'clients_limit': row[7],
                 'created_at': row[8].isoformat() if row[8] else None,
-                'users_count': row[9],
-                'matrices_count': row[10],
-                'clients_count': row[11]
+                'status': row[9],
+                'users_count': row[10],
+                'matrices_count': row[11],
+                'clients_count': row[12]
             }
             organizations.append(org)
         
         return organizations
+        
+    finally:
+        cur.close()
+        conn.close()
+
+
+def generate_password(length=12):
+    """Сгенерировать случайный пароль"""
+    chars = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+
+def create_organization(data: dict):
+    """Создать новую организацию с owner"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        name = data.get('name', '').strip()
+        owner_username = data.get('owner_username', '').strip()
+        owner_password = data.get('owner_password', '').strip()
+        tier = data.get('subscription_tier', 'free')
+        start_date = data.get('subscription_start_date')
+        end_date = data.get('subscription_end_date')
+        users_limit = data.get('users_limit', 3)
+        matrices_limit = data.get('matrices_limit', 1)
+        clients_limit = data.get('clients_limit', 10)
+        
+        if not name or not owner_username:
+            return {'error': 'Name and owner username required'}
+        
+        # Если пароль не указан, генерируем автоматически
+        if not owner_password:
+            owner_password = generate_password()
+        
+        # Проверить, что username свободен
+        cur.execute("SELECT id FROM users WHERE username = %s", (owner_username,))
+        if cur.fetchone():
+            return {'error': 'Username already exists'}
+        
+        # Создать организацию
+        cur.execute(
+            """
+            INSERT INTO organizations 
+            (name, subscription_tier, subscription_start_date, subscription_end_date,
+             users_limit, matrices_limit, clients_limit, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'active')
+            RETURNING id
+            """,
+            (name, tier, start_date, end_date, users_limit, matrices_limit, clients_limit)
+        )
+        org_id = cur.fetchone()[0]
+        
+        # Создать owner пользователя
+        password_hash = bcrypt.hashpw(owner_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        cur.execute(
+            """
+            INSERT INTO users 
+            (username, password_hash, role, organization_id, is_active)
+            VALUES (%s, %s, 'owner', %s, true)
+            RETURNING id
+            """,
+            (owner_username, password_hash, org_id)
+        )
+        user_id = cur.fetchone()[0]
+        
+        conn.commit()
+        
+        return {
+            'success': True,
+            'organization_id': org_id,
+            'user_id': user_id,
+            'username': owner_username,
+            'password': owner_password
+        }
         
     finally:
         cur.close()
@@ -147,11 +228,38 @@ def update_organization_subscription(org_id: int, data: dict):
         conn.close()
 
 
+def update_organization_status(org_id: int, status: str):
+    """Изменить статус организации"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        if status not in ['active', 'suspended', 'deleted']:
+            return {'error': 'Invalid status'}
+        
+        cur.execute(
+            "UPDATE organizations SET status = %s WHERE id = %s",
+            (status, org_id)
+        )
+        conn.commit()
+        
+        if cur.rowcount == 0:
+            return {'error': 'Organization not found'}
+        
+        return {'success': True, 'status': status}
+        
+    finally:
+        cur.close()
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """
     Управление организациями в админ-панели.
     GET /admin-organizations - список всех организаций
+    POST /admin-organizations - создать организацию с owner
     PUT /admin-organizations/:id - обновить тариф организации
+    PATCH /admin-organizations/:id/status - изменить статус
     """
     method = event.get('httpMethod', 'GET')
     
@@ -160,7 +268,7 @@ def handler(event: dict, context) -> dict:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, X-Authorization'
             },
             'body': ''
@@ -188,6 +296,24 @@ def handler(event: dict, context) -> dict:
                 'body': json.dumps({'organizations': organizations})
             }
         
+        # POST - создать организацию
+        elif method == 'POST':
+            body = json.loads(event.get('body', '{}'))
+            result = create_organization(body)
+            
+            if 'error' in result:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(result)
+                }
+            
+            return {
+                'statusCode': 201,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps(result)
+            }
+        
         # PUT - обновить тариф
         elif method == 'PUT':
             # Получить ID организации из path params
@@ -203,6 +329,43 @@ def handler(event: dict, context) -> dict:
             
             body = json.loads(event.get('body', '{}'))
             result = update_organization_subscription(int(org_id), body)
+            
+            if 'error' in result:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(result)
+                }
+            
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps(result)
+            }
+        
+        # PATCH - изменить статус
+        elif method == 'PATCH':
+            path_params = event.get('pathParams', {})
+            org_id = path_params.get('id')
+            
+            if not org_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Organization ID required'})
+                }
+            
+            body = json.loads(event.get('body', '{}'))
+            status = body.get('status')
+            
+            if not status:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Status required'})
+                }
+            
+            result = update_organization_status(int(org_id), status)
             
             if 'error' in result:
                 return {

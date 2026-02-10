@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
+import { useToast } from '@/hooks/use-toast';
 
 const ADMIN_ORGS_URL = import.meta.env.VITE_ADMIN_ORGS_URL || 'https://functions.poehali.dev/27c59523-c1ea-424b-a922-e5af28d26e5e';
+const ADMIN_SETTINGS_URL = import.meta.env.VITE_ADMIN_SETTINGS_URL || 'https://functions.poehali.dev/e34420aa-6eec-4e3d-9cdb-006ded09aff2';
 
 interface Organization {
   id: number;
@@ -22,6 +24,7 @@ interface Organization {
   matrices_limit: number;
   clients_limit: number;
   created_at: string;
+  status: string;
   users_count: number;
   matrices_count: number;
   clients_count: number;
@@ -33,7 +36,11 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [editForm, setEditForm] = useState({
     subscription_tier: '',
@@ -42,6 +49,24 @@ export default function AdminDashboard() {
     users_limit: 0,
     matrices_limit: 0,
     clients_limit: 0,
+  });
+
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    owner_username: '',
+    owner_password: '',
+    subscription_tier: 'free',
+    subscription_start_date: new Date().toISOString().split('T')[0],
+    subscription_end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    users_limit: 3,
+    matrices_limit: 1,
+    clients_limit: 10,
+  });
+
+  const [settingsForm, setSettingsForm] = useState({
+    new_username: '',
+    current_password: '',
+    new_password: '',
   });
 
   const adminToken = localStorage.getItem('admin_token');
@@ -60,7 +85,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(ADMIN_ORGS_URL, {
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          'X-Authorization': `Bearer ${adminToken}`,
         },
       });
 
@@ -106,7 +131,7 @@ export default function AdminDashboard() {
       const response = await fetch(`${ADMIN_ORGS_URL}/${selectedOrg.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          'X-Authorization': `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(editForm),
@@ -115,12 +140,133 @@ export default function AdminDashboard() {
       if (response.ok) {
         setEditDialogOpen(false);
         loadOrganizations();
+        toast({ title: 'Тариф обновлён' });
       } else {
         const data = await response.json();
-        alert(`Ошибка: ${data.error}`);
+        toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
       }
     } catch (err) {
-      alert('Ошибка сохранения');
+      toast({ title: 'Ошибка сохранения', variant: 'destructive' });
+    }
+  };
+
+  const handleCreateOrganization = async () => {
+    try {
+      const response = await fetch(ADMIN_ORGS_URL, {
+        method: 'POST',
+        headers: {
+          'X-Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createForm),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCreateDialogOpen(false);
+        loadOrganizations();
+        setGeneratedPassword(data.password);
+        toast({
+          title: 'Организация создана',
+          description: `Логин: ${data.username}, Пароль: ${data.password}`,
+        });
+        // Сбросить форму
+        setCreateForm({
+          name: '',
+          owner_username: '',
+          owner_password: '',
+          subscription_tier: 'free',
+          subscription_start_date: new Date().toISOString().split('T')[0],
+          subscription_end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          users_limit: 3,
+          matrices_limit: 1,
+          clients_limit: 10,
+        });
+      } else {
+        toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Ошибка создания', variant: 'destructive' });
+    }
+  };
+
+  const handleChangeStatus = async (orgId: number, newStatus: string) => {
+    try {
+      const response = await fetch(`${ADMIN_ORGS_URL}/${orgId}`, {
+        method: 'PATCH',
+        headers: {
+          'X-Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.dumps({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        loadOrganizations();
+        toast({ title: `Статус изменён на ${newStatus}` });
+      } else {
+        const data = await response.json();
+        toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Ошибка изменения статуса', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdateUsername = async () => {
+    if (!settingsForm.new_username) return;
+
+    try {
+      const response = await fetch(`${ADMIN_SETTINGS_URL}/username`, {
+        method: 'PUT',
+        headers: {
+          'X-Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: settingsForm.new_username }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('admin_username', data.username);
+        toast({ title: 'Логин изменён' });
+        setSettingsForm({ ...settingsForm, new_username: '' });
+      } else {
+        toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Ошибка изменения логина', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!settingsForm.current_password || !settingsForm.new_password) return;
+
+    try {
+      const response = await fetch(`${ADMIN_SETTINGS_URL}/password`, {
+        method: 'PUT',
+        headers: {
+          'X-Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          current_password: settingsForm.current_password,
+          new_password: settingsForm.new_password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({ title: 'Пароль изменён' });
+        setSettingsForm({ ...settingsForm, current_password: '', new_password: '' });
+      } else {
+        toast({ title: 'Ошибка', description: data.error, variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Ошибка изменения пароля', variant: 'destructive' });
     }
   };
 
@@ -132,6 +278,15 @@ export default function AdminDashboard() {
       enterprise: 'bg-green-100 text-green-800',
     };
     return colors[tier as keyof typeof colors] || colors.free;
+  };
+
+  const getStatusBadge = (status: string) => {
+    const colors = {
+      active: 'bg-green-100 text-green-800',
+      suspended: 'bg-orange-100 text-orange-800',
+      deleted: 'bg-red-100 text-red-800',
+    };
+    return colors[status as keyof typeof colors] || colors.active;
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -167,10 +322,16 @@ export default function AdminDashboard() {
                   Управление организациями • Вход: {adminUsername}
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={handleLogout}>
-                <Icon name="LogOut" className="mr-2 h-4 w-4" />
-                Выход
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setSettingsDialogOpen(true)}>
+                  <Icon name="Settings" className="mr-2 h-4 w-4" />
+                  Настройки
+                </Button>
+                <Button variant="outline" onClick={handleLogout}>
+                  <Icon name="LogOut" className="mr-2 h-4 w-4" />
+                  Выход
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -180,12 +341,20 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            <div className="mb-4">
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Icon name="Plus" className="mr-2 h-4 w-4" />
+                Добавить организацию
+              </Button>
+            </div>
+
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Организация</TableHead>
+                    <TableHead>Статус</TableHead>
                     <TableHead>Тариф</TableHead>
                     <TableHead>Период</TableHead>
                     <TableHead>Лимиты</TableHead>
@@ -202,6 +371,11 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="font-medium">
                         {org.name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusBadge(org.status)}>
+                          {org.status}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge className={getTierBadge(org.subscription_tier)}>
@@ -241,13 +415,41 @@ export default function AdminDashboard() {
                         {formatDate(org.created_at)}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditOrg(org)}
-                        >
-                          <Icon name="Edit" className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditOrg(org)}
+                          >
+                            <Icon name="Edit" className="h-4 w-4" />
+                          </Button>
+                          {org.status === 'active' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleChangeStatus(org.id, 'suspended')}
+                            >
+                              <Icon name="Pause" className="h-4 w-4" />
+                            </Button>
+                          ) : org.status === 'suspended' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleChangeStatus(org.id, 'active')}
+                            >
+                              <Icon name="Play" className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                          {org.status !== 'deleted' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleChangeStatus(org.id, 'deleted')}
+                            >
+                              <Icon name="Trash2" className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -363,6 +565,204 @@ export default function AdminDashboard() {
                   className="flex-1"
                 >
                   Отмена
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог создания организации */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Создать организацию</DialogTitle>
+              <DialogDescription>
+                Будет создана организация и owner пользователь
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Название организации</Label>
+                <Input
+                  value={createForm.name}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, name: e.target.value })
+                  }
+                  placeholder="Моя компания"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Логин owner</Label>
+                <Input
+                  value={createForm.owner_username}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, owner_username: e.target.value })
+                  }
+                  placeholder="owner_username"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Пароль (оставьте пустым для автогенерации)</Label>
+                <Input
+                  type="password"
+                  value={createForm.owner_password}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, owner_password: e.target.value })
+                  }
+                  placeholder="Автоматически"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Тариф</Label>
+                <Select
+                  value={createForm.subscription_tier}
+                  onValueChange={(value) =>
+                    setCreateForm({ ...createForm, subscription_tier: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="basic">Basic</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Дата начала</Label>
+                  <Input
+                    type="date"
+                    value={createForm.subscription_start_date}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, subscription_start_date: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Дата окончания</Label>
+                  <Input
+                    type="date"
+                    value={createForm.subscription_end_date}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, subscription_end_date: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Польз.</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={createForm.users_limit}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, users_limit: parseInt(e.target.value) || 0 })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Матр.</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={createForm.matrices_limit}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, matrices_limit: parseInt(e.target.value) || 0 })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Клиент.</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={createForm.clients_limit}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, clients_limit: parseInt(e.target.value) || 0 })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button onClick={handleCreateOrganization} className="flex-1">
+                  Создать
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог настроек админа */}
+        <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Настройки администратора</DialogTitle>
+              <DialogDescription>
+                Изменение логина и пароля
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold">Изменить логин</h3>
+                <div className="space-y-2">
+                  <Label>Новый логин</Label>
+                  <Input
+                    value={settingsForm.new_username}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, new_username: e.target.value })
+                    }
+                    placeholder={adminUsername || ''}
+                  />
+                </div>
+                <Button onClick={handleUpdateUsername} size="sm">
+                  Сохранить логин
+                </Button>
+              </div>
+
+              <div className="border-t pt-4 space-y-4">
+                <h3 className="text-sm font-semibold">Изменить пароль</h3>
+                <div className="space-y-2">
+                  <Label>Текущий пароль</Label>
+                  <Input
+                    type="password"
+                    value={settingsForm.current_password}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, current_password: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Новый пароль</Label>
+                  <Input
+                    type="password"
+                    value={settingsForm.new_password}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, new_password: e.target.value })
+                    }
+                  />
+                </div>
+                <Button onClick={handleUpdatePassword} size="sm">
+                  Сохранить пароль
                 </Button>
               </div>
             </div>
