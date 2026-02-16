@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import Icon from '@/components/ui/icon';
 
+const ADMIN_ORGS_URL = import.meta.env.VITE_ADMIN_ORGS_URL || 'https://functions.poehali.dev/27c59523-c1ea-424b-a922-e5af28d26e5e';
+
 interface User {
   id: number;
   username: string;
@@ -56,8 +58,7 @@ const EditUserDialog = ({ user, open, onOpenChange, onUserUpdated }: EditUserDia
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const funcUrl = await import('@/func2url.json').then(m => m['admin-organizations']);
+      const token = localStorage.getItem('admin_token');
 
       const body: Record<string, string | boolean> = {
         username,
@@ -71,10 +72,10 @@ const EditUserDialog = ({ user, open, onOpenChange, onUserUpdated }: EditUserDia
         body.password = password;
       }
 
-      const response = await fetch(`${funcUrl}?resource=users&id=${user.id}`, {
+      const response = await fetch(`${ADMIN_ORGS_URL}?resource=users&id=${user.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'X-Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),

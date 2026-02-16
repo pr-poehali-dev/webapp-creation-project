@@ -13,6 +13,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import EditUserDialog from '@/components/admin/EditUserDialog';
 
+const ADMIN_ORGS_URL = import.meta.env.VITE_ADMIN_ORGS_URL || 'https://functions.poehali.dev/27c59523-c1ea-424b-a922-e5af28d26e5e';
+
 interface User {
   id: number;
   username: string;
@@ -36,12 +38,11 @@ const AdminOrganizationTeam = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const funcUrl = await import('@/func2url.json').then(m => m['admin-organizations']);
+      const token = localStorage.getItem('admin_token');
       
-      const response = await fetch(`${funcUrl}?resource=users&organization_id=${orgId}`, {
+      const response = await fetch(`${ADMIN_ORGS_URL}?resource=users&organization_id=${orgId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'X-Authorization': `Bearer ${token}`,
         },
       });
 
@@ -60,12 +61,11 @@ const AdminOrganizationTeam = () => {
 
   const fetchOrgName = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const funcUrl = await import('@/func2url.json').then(m => m['admin-organizations']);
+      const token = localStorage.getItem('admin_token');
       
-      const response = await fetch(funcUrl, {
+      const response = await fetch(ADMIN_ORGS_URL, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'X-Authorization': `Bearer ${token}`,
         },
       });
 
