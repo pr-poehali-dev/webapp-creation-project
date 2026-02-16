@@ -23,6 +23,7 @@ import Settings from "./pages/Settings";
 import TelegramLink from "./pages/TelegramLink";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminOrganizationTeam from "./pages/AdminOrganizationTeam";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/telegram-link" element={<TelegramLink />} />
           <Route path="/crmadminauth" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-organization-team/:orgId" element={<AdminOrganizationTeam />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

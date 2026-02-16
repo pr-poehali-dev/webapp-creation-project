@@ -2,6 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { useNavigate } from 'react-router-dom';
 
 interface Organization {
   id: number;
@@ -30,6 +31,8 @@ export default function OrganizationsTable({
   onEdit,
   onChangeStatus,
 }: OrganizationsTableProps) {
+  const navigate = useNavigate();
+
   const getTierBadge = (tier: string) => {
     const colors = {
       free: 'bg-gray-100 text-gray-800',
@@ -130,7 +133,16 @@ export default function OrganizationsTable({
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => navigate(`/admin-organization-team/${org.id}`)}
+                    title="Управление командой"
+                  >
+                    <Icon name="Users" className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => onEdit(org)}
+                    title="Редактировать"
                   >
                     <Icon name="Edit" className="h-4 w-4" />
                   </Button>
@@ -139,6 +151,7 @@ export default function OrganizationsTable({
                       variant="outline"
                       size="sm"
                       onClick={() => onChangeStatus(org.id, 'suspended')}
+                      title="Приостановить"
                     >
                       <Icon name="Pause" className="h-4 w-4" />
                     </Button>
@@ -147,6 +160,7 @@ export default function OrganizationsTable({
                       variant="outline"
                       size="sm"
                       onClick={() => onChangeStatus(org.id, 'active')}
+                      title="Активировать"
                     >
                       <Icon name="Play" className="h-4 w-4" />
                     </Button>
@@ -156,6 +170,7 @@ export default function OrganizationsTable({
                       variant="outline"
                       size="sm"
                       onClick={() => onChangeStatus(org.id, 'deleted')}
+                      title="Удалить"
                     >
                       <Icon name="Trash2" className="h-4 w-4" />
                     </Button>

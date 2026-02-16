@@ -283,15 +283,147 @@ def update_organization_status(org_id: int, status: str):
         conn.close()
 
 
+def get_organization_users(org_id: int):
+    """Получить всех пользователей организации"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute(
+            """
+            SELECT 
+                u.id,
+                u.username,
+                u.email,
+                u.full_name,
+                u.role,
+                u.is_active,
+                u.created_at,
+                u.last_login_at
+            FROM users u
+            WHERE u.organization_id = %s
+            ORDER BY 
+                CASE u.role
+                    WHEN 'owner' THEN 1
+                    WHEN 'admin' THEN 2
+                    WHEN 'manager' THEN 3
+                    WHEN 'viewer' THEN 4
+                    ELSE 5
+                END,
+                u.created_at ASC
+            """,
+            (org_id,)
+        )
+        
+        users = []
+        for row in cur.fetchall():
+            user = {
+                'id': row[0],
+                'username': row[1],
+                'email': row[2],
+                'full_name': row[3],
+                'role': row[4],
+                'is_active': row[5],
+                'created_at': row[6].isoformat() if row[6] else None,
+                'last_login_at': row[7].isoformat() if row[7] else None
+            }
+            users.append(user)
+        
+        return users
+        
+    finally:
+        cur.close()
+        conn.close()
+
+
+def update_user(user_id: int, data: dict):
+    """Обновить данные пользователя"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cur.fetchone():
+            return {'error': 'User not found'}
+        
+        updates = []
+        params = []
+        
+        username = data.get('username')
+        email = data.get('email')
+        full_name = data.get('full_name')
+        role = data.get('role')
+        is_active = data.get('is_active')
+        password = data.get('password')
+        
+        if username:
+            cur.execute("SELECT id FROM users WHERE username = %s AND id != %s", (username, user_id))
+            if cur.fetchone():
+                return {'error': 'Username already exists'}
+            updates.append("username = %s")
+            params.append(username)
+        
+        if email:
+            cur.execute("SELECT id FROM users WHERE email = %s AND id != %s", (email, user_id))
+            if cur.fetchone():
+                return {'error': 'Email already exists'}
+            updates.append("email = %s")
+            params.append(email)
+        
+        if full_name:
+            updates.append("full_name = %s")
+            params.append(full_name)
+        
+        if role and role in ['owner', 'admin', 'manager', 'viewer']:
+            updates.append("role = %s")
+            params.append(role)
+        
+        if is_active is not None:
+            updates.append("is_active = %s")
+            params.append(is_active)
+        
+        generated_password = None
+        if password:
+            if password == 'GENERATE':
+                generated_password = generate_password()
+                password_hash = bcrypt.hashpw(generated_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            else:
+                password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            updates.append("password_hash = %s")
+            params.append(password_hash)
+        
+        if not updates:
+            return {'error': 'No fields to update'}
+        
+        params.append(user_id)
+        
+        query = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
+        cur.execute(query, tuple(params))
+        conn.commit()
+        
+        result = {'success': True}
+        if generated_password:
+            result['generated_password'] = generated_password
+        
+        return result
+        
+    finally:
+        cur.close()
+        conn.close()
+
+
 def handler(event: dict, context) -> dict:
     """
-    Управление организациями в админ-панели.
+    Управление организациями и пользователями в админ-панели.
     GET /admin-organizations - список всех организаций
+    GET /admin-organizations/users?organization_id=X - пользователи организации
     POST /admin-organizations - создать организацию с owner
-    PUT /admin-organizations/:id - обновить тариф организации
-    PATCH /admin-organizations/:id/status - изменить статус
+    PUT /admin-organizations?id=X - обновить тариф организации
+    PUT /admin-organizations/users?id=X - обновить пользователя
+    PATCH /admin-organizations?id=X - изменить статус организации
     """
     method = event.get('httpMethod', 'GET')
+    path = event.get('path', '')
     
     if method == 'OPTIONS':
         return {
@@ -317,14 +449,32 @@ def handler(event: dict, context) -> dict:
         }
     
     try:
-        # GET - список организаций
+        query_params = event.get('queryStringParameters', {}) or {}
+        
+        # GET - список организаций или пользователей
         if method == 'GET':
-            organizations = get_all_organizations()
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'organizations': organizations})
-            }
+            if 'users' in path or query_params.get('resource') == 'users':
+                org_id = query_params.get('organization_id')
+                if not org_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'organization_id required'})
+                    }
+                
+                users = get_organization_users(int(org_id))
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'users': users})
+                }
+            else:
+                organizations = get_all_organizations()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'organizations': organizations})
+                }
         
         # POST - создать организацию
         elif method == 'POST':
@@ -344,40 +494,61 @@ def handler(event: dict, context) -> dict:
                 'body': json.dumps(result)
             }
         
-        # PUT - обновить тариф
+        # PUT - обновить тариф организации или пользователя
         elif method == 'PUT':
-            # Получить ID организации из query параметров
-            query_params = event.get('queryStringParameters', {})
-            org_id = query_params.get('id') if query_params else None
-            
-            if not org_id:
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Organization ID required'})
-                }
-            
             body = json.loads(event.get('body', '{}'))
-            result = update_organization_subscription(int(org_id), body)
             
-            if 'error' in result:
+            if 'users' in path or query_params.get('resource') == 'users':
+                user_id = query_params.get('id')
+                if not user_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'User ID required'})
+                    }
+                
+                result = update_user(int(user_id), body)
+                
+                if 'error' in result:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps(result)
+                    }
+                
                 return {
-                    'statusCode': 400,
+                    'statusCode': 200,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps(result)
                 }
-            
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps(result)
-            }
+            else:
+                org_id = query_params.get('id')
+                
+                if not org_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Organization ID required'})
+                    }
+                
+                result = update_organization_subscription(int(org_id), body)
+                
+                if 'error' in result:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps(result)
+                    }
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps(result)
+                }
         
-        # PATCH - изменить статус
+        # PATCH - изменить статус организации
         elif method == 'PATCH':
-            # Получить ID организации из query параметров
-            query_params = event.get('queryStringParameters', {})
-            org_id = query_params.get('id') if query_params else None
+            org_id = query_params.get('id')
             
             if not org_id:
                 return {
