@@ -217,12 +217,13 @@ const Dashboard = () => {
     },
     {
       id: 'settings',
-      title: permissions.settings_access ? 'Настройки' : 'Настройки профиля',
-      description: permissions.settings_access ? 'Конфигурация системы' : 'Личные данные и пароль',
+      title: 'Настройки',
+      description: 'Конфигурация системы',
       icon: 'Settings',
       iconColor: 'text-gray-500',
       gradient: 'from-gray-500/20 to-gray-600/30 hover:from-gray-500/30 hover:to-gray-600/40',
-      route: permissions.settings_access ? '/settings' : '/profile',
+      route: '/settings',
+      permission: (p) => p.settings_access === true,
     },
   ];
 

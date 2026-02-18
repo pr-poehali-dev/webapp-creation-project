@@ -2,6 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { useEffect, useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface User {
   id: number;
@@ -61,14 +68,43 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             </button>
             
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium">{user.full_name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <Icon name="LogOut" size={16} className="sm:mr-2" />
-                <span className="hidden sm:inline">Выйти</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-sm font-medium">{user.full_name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-white">
+                        {user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5 text-sm">
+                    <p className="font-medium">{user.full_name}</p>
+                    <p className="text-xs text-muted-foreground">{user.organization_name}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <Icon name="User" size={16} className="mr-2" />
+                    Настройки профиля
+                  </DropdownMenuItem>
+                  {(user.role === 'owner' || user.role === 'admin') && (
+                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                      <Icon name="Settings" size={16} className="mr-2" />
+                      Системные настройки
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <Icon name="LogOut" size={16} className="mr-2" />
+                    Выйти
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
