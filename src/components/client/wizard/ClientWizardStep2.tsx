@@ -31,12 +31,12 @@ const ClientWizardStep2 = ({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-12">
-        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <Icon name="User" size={40} className="text-primary" />
+      <div className="text-center mb-6 sm:mb-8 md:mb-12">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+          <Icon name="User" size={32} className="text-primary sm:w-10 sm:h-10" />
         </div>
-        <h2 className="text-3xl font-bold mb-4">Контактное лицо?</h2>
-        <p className="text-muted-foreground">Укажите контактную информацию (необязательно)</p>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4 px-4">Контактное лицо?</h2>
+        <p className="text-sm sm:text-base text-muted-foreground px-4">Укажите контактную информацию (необязательно)</p>
       </div>
 
       <div className="space-y-4">
@@ -50,7 +50,7 @@ const ClientWizardStep2 = ({
             type="text"
             value={contactPerson}
             onChange={(e) => onChange('contactPerson', e.target.value)}
-            className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Иван Петров"
           />
         </div>
@@ -64,7 +64,7 @@ const ClientWizardStep2 = ({
             type="email"
             value={email}
             onChange={(e) => onChange('email', e.target.value)}
-            className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="ivan@company.ru"
           />
         </div>
@@ -78,34 +78,36 @@ const ClientWizardStep2 = ({
             type="tel"
             value={phone}
             onChange={(e) => onChange('phone', e.target.value)}
-            className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="+7 (999) 123-45-67"
           />
         </div>
 
-        <div className="flex justify-between pt-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 sm:pt-6">
           <Button
             onClick={onBack}
             variant="outline"
             size="lg"
+            className="w-full sm:w-auto order-2 sm:order-1"
           >
             <Icon name="ArrowLeft" size={20} className="mr-2" />
             Назад
           </Button>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 order-1 sm:order-2">
             {hasAnyData && (
               <Button
                 onClick={onSkip}
                 variant="ghost"
                 size="lg"
+                className="w-full sm:w-auto"
               >
                 Пропустить
               </Button>
             )}
             <Button
               onClick={hasAnyData ? onNext : onSkip}
-              className="gradient-primary"
+              className="gradient-primary w-full sm:w-auto"
               size="lg"
             >
               {hasAnyData ? 'Далее' : 'Пропустить'}

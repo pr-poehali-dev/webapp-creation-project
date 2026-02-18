@@ -269,7 +269,7 @@ const ClientNew = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 py-4 sm:px-6 sm:py-8 md:py-12">
         {error && (
           <div className="max-w-2xl mx-auto mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
             <Icon name="AlertTriangle" size={20} className="text-destructive flex-shrink-0 mt-0.5" />

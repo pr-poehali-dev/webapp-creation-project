@@ -150,15 +150,12 @@ const QuestionnaireFlow = ({
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-start justify-between gap-2">
                       <h4 className="text-sm sm:text-base md:text-lg font-semibold leading-tight">{status.label}</h4>
                       {isSelected && (
                         <Icon name="CheckCircle2" size={20} className="text-primary flex-shrink-0 mt-0.5" />
                       )}
                     </div>
-                    <Badge variant={isSelected ? 'default' : 'secondary'} className="text-xs sm:text-sm px-2 py-0.5 sm:px-3 sm:py-1">
-                      {status.weight} {status.weight === 1 ? 'балл' : status.weight < 5 ? 'балла' : 'баллов'}
-                    </Badge>
                   </Card>
                 );
               })}
