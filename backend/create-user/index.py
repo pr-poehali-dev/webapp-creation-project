@@ -113,7 +113,8 @@ def handler(event: dict, context) -> dict:
                        (SELECT COUNT(*) FROM users WHERE organization_id = %s AND is_active = true) as current_users
                 FROM organizations 
                 WHERE id = %s
-                """ % (organization_id, organization_id)
+                """,
+                (organization_id, organization_id)
             )
             result = cur.fetchone()
             
@@ -135,7 +136,7 @@ def handler(event: dict, context) -> dict:
                     })
                 }
             
-            cur.execute("SELECT id FROM users WHERE username = '%s'" % username)
+            cur.execute("SELECT id FROM users WHERE username = %s", (username,))
             if cur.fetchone():
                 return {
                     'statusCode': 400,
@@ -148,9 +149,10 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 """
                 INSERT INTO users (organization_id, username, password_hash, full_name, role, is_active)
-                VALUES (%s, '%s', '%s', '%s', '%s', true)
+                VALUES (%s, %s, %s, %s, %s, true)
                 RETURNING id
-                """ % (organization_id, username, password_hash, full_name, role)
+                """,
+                (organization_id, username, password_hash, full_name, role)
             )
             new_user_id = cur.fetchone()[0]
             
@@ -158,7 +160,8 @@ def handler(event: dict, context) -> dict:
                 """
                 INSERT INTO user_permissions (user_id, organization_id)
                 VALUES (%s, %s)
-                """ % (new_user_id, organization_id)
+                """,
+                (new_user_id, organization_id)
             )
             
             conn.commit()
