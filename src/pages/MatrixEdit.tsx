@@ -51,12 +51,27 @@ const MatrixEdit = () => {
   const [saving, setSaving] = useState(false);
   const [savingQuadrants, setSavingQuadrants] = useState(false);
   const [error, setError] = useState('');
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const permissionsData = localStorage.getItem('permissions');
+    
     if (!token) {
       navigate('/login');
       return;
+    }
+
+    if (permissionsData) {
+      try {
+        const permissions = JSON.parse(permissionsData);
+        if (permissions.matrix_access !== 'create') {
+          setIsReadOnly(true);
+          toast.error('У вас нет прав на редактирование матриц');
+        }
+      } catch (e) {
+        console.error('Error parsing permissions', e);
+      }
     }
 
     fetchMatrix(token);
@@ -281,18 +296,20 @@ const MatrixEdit = () => {
               <h1 className="text-xl font-bold">Редактирование матрицы</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleDelete}
-                className="text-destructive hover:text-destructive"
-              >
-                <Icon name="Trash2" size={16} className="mr-2" />
-                Деактивировать
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  variant="outline"
+                  onClick={handleDelete}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Icon name="Trash2" size={16} className="mr-2" />
+                  Деактивировать
+                </Button>
+              )}
               <Button
                 className="gradient-primary"
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || isReadOnly}
               >
                 {saving ? (
                   <>
@@ -302,7 +319,7 @@ const MatrixEdit = () => {
                 ) : (
                   <>
                     <Icon name="Save" size={16} className="mr-2" />
-                    Сохранить
+                    {isReadOnly ? 'Только просмотр' : 'Сохранить'}
                   </>
                 )}
               </Button>
@@ -320,11 +337,21 @@ const MatrixEdit = () => {
             </div>
           )}
 
+          {isReadOnly && (
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-3">
+              <Icon name="Lock" size={20} className="text-yellow-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Режим просмотра</p>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">У вас нет прав на редактирование матриц. Обратитесь к администратору.</p>
+              </div>
+            </div>
+          )}
+
           <MatrixEditBasicInfo
             name={name}
             description={description}
-            onNameChange={setName}
-            onDescriptionChange={setDescription}
+            onNameChange={isReadOnly ? () => {} : setName}
+            onDescriptionChange={isReadOnly ? () => {} : setDescription}
           />
 
           <MatrixEditCriteriaList
@@ -332,10 +359,10 @@ const MatrixEdit = () => {
             title="Ось X: Стратегическое влияние"
             criteria={xCriteria}
             allCriteria={criteria}
-            onAddCriterion={() => addCriterion('x')}
-            onUpdateCriterion={updateCriterion}
-            onUpdateCriterionStatuses={updateCriterionStatuses}
-            onRemoveCriterion={removeCriterion}
+            onAddCriterion={isReadOnly ? () => {} : () => addCriterion('x')}
+            onUpdateCriterion={isReadOnly ? () => {} : updateCriterion}
+            onUpdateCriterionStatuses={isReadOnly ? () => {} : updateCriterionStatuses}
+            onRemoveCriterion={isReadOnly ? () => {} : removeCriterion}
           />
 
           <MatrixEditCriteriaList
@@ -343,10 +370,10 @@ const MatrixEdit = () => {
             title="Ось Y: Зрелость потребности"
             criteria={yCriteria}
             allCriteria={criteria}
-            onAddCriterion={() => addCriterion('y')}
-            onUpdateCriterion={updateCriterion}
-            onUpdateCriterionStatuses={updateCriterionStatuses}
-            onRemoveCriterion={removeCriterion}
+            onAddCriterion={isReadOnly ? () => {} : () => addCriterion('y')}
+            onUpdateCriterion={isReadOnly ? () => {} : updateCriterion}
+            onUpdateCriterionStatuses={isReadOnly ? () => {} : updateCriterionStatuses}
+            onRemoveCriterion={isReadOnly ? () => {} : removeCriterion}
           />
 
           <Card className="p-6">

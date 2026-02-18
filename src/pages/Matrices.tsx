@@ -229,17 +229,17 @@ const Matrices = () => {
                             <p className="text-muted-foreground mb-3">{matrix.description}</p>
                           )}
                           
-                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <Icon name="ListChecks" size={16} />
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 md:gap-6 text-xs sm:text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <Icon name="ListChecks" size={14} className="sm:w-4 sm:h-4" />
                               <span>{matrix.criteria_count} критериев</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Icon name="User" size={16} />
-                              <span>{matrix.created_by_name}</span>
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <Icon name="User" size={14} className="sm:w-4 sm:h-4" />
+                              <span className="truncate max-w-[120px] sm:max-w-none">{matrix.created_by_name}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Icon name="Calendar" size={16} />
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <Icon name="Calendar" size={14} className="sm:w-4 sm:h-4" />
                               <span>{new Date(matrix.created_at).toLocaleDateString()}</span>
                             </div>
                           </div>

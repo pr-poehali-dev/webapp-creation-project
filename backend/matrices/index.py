@@ -296,13 +296,31 @@ def handle_get(payload: dict, matrix_id: str) -> dict:
 
 def handle_create(payload: dict, body: dict) -> dict:
     """Создание новой матрицы с критериями"""
-    if payload['role'] not in ['owner', 'admin', 'manager']:
-        return {
-            'statusCode': 403,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Permission denied'}),
-            'isBase64Encoded': False
-        }
+    user_id = payload['user_id']
+    organization_id = payload['organization_id']
+    role = payload['role']
+    
+    # Проверка прав доступа
+    if role not in ['owner', 'admin']:
+        # Для менеджера проверяем matrix_access в user_permissions
+        conn_perm = get_db_connection()
+        cur_perm = conn_perm.cursor()
+        
+        cur_perm.execute(
+            "SELECT matrix_access FROM user_permissions WHERE user_id = %s AND organization_id = %s"
+            % (int(user_id), int(organization_id))
+        )
+        result_perm = cur_perm.fetchone()
+        cur_perm.close()
+        conn_perm.close()
+        
+        if not result_perm or result_perm[0] != 'create':
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'У вас нет прав на создание матриц'}),
+                'isBase64Encoded': False
+            }
     
     name = body.get('name', '').strip()
     description = body.get('description', '').strip()
@@ -324,8 +342,7 @@ def handle_create(payload: dict, body: dict) -> dict:
             'isBase64Encoded': False
         }
     
-    organization_id = payload['organization_id']
-    created_by = payload['user_id']
+    created_by = user_id
     
     conn = get_db_connection()
     cur = conn.cursor()
@@ -387,13 +404,31 @@ def handle_create(payload: dict, body: dict) -> dict:
 
 def handle_update(payload: dict, body: dict) -> dict:
     """Обновление матрицы и критериев"""
-    if payload['role'] not in ['owner', 'admin', 'manager']:
-        return {
-            'statusCode': 403,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Permission denied'}),
-            'isBase64Encoded': False
-        }
+    user_id = payload['user_id']
+    organization_id = payload['organization_id']
+    role = payload['role']
+    
+    # Проверка прав доступа
+    if role not in ['owner', 'admin']:
+        # Для менеджера проверяем matrix_access в user_permissions
+        conn_perm = get_db_connection()
+        cur_perm = conn_perm.cursor()
+        
+        cur_perm.execute(
+            "SELECT matrix_access FROM user_permissions WHERE user_id = %s AND organization_id = %s"
+            % (int(user_id), int(organization_id))
+        )
+        result_perm = cur_perm.fetchone()
+        cur_perm.close()
+        conn_perm.close()
+        
+        if not result_perm or result_perm[0] != 'create':
+            return {
+                'statusCode': 403,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'error': 'У вас нет прав на редактирование матриц'}),
+                'isBase64Encoded': False
+            }
     
     matrix_id = body.get('matrix_id')
     name = body.get('name', '').strip()
@@ -407,8 +442,6 @@ def handle_update(payload: dict, body: dict) -> dict:
             'body': json.dumps({'error': 'matrix_id is required'}),
             'isBase64Encoded': False
         }
-    
-    organization_id = payload['organization_id']
     
     conn = get_db_connection()
     cur = conn.cursor()
