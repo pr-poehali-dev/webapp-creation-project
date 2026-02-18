@@ -56,7 +56,7 @@ const Team = () => {
     setLoading(true);
     try {
       const response = await fetch('https://functions.poehali.dev/369fdc8c-fb5b-4b02-bb8f-ef5d8da3de3e', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'X-Authorization': `Bearer ${token}` }
       });
 
       if (response.ok) {
@@ -136,7 +136,7 @@ const Team = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'X-Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           action: 'update',
