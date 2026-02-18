@@ -135,7 +135,7 @@ def handle_login(body: dict) -> dict:
             """
             SELECT u.id, u.organization_id, u.username, u.password_hash, u.full_name, u.role, u.is_active, 
                    o.name, o.subscription_status, o.subscription_expires_at,
-                   o.users_limit, o.matrices_limit, o.clients_limit
+                   o.users_limit, o.matrices_limit, o.clients_limit, u.password_change_required
             FROM users u
             JOIN organizations o ON u.organization_id = o.id
             WHERE u.username = '%s'
@@ -150,7 +150,7 @@ def handle_login(body: dict) -> dict:
                 'body': json.dumps({'error': 'Неверный логин или пароль'})
             }
         
-        user_id, organization_id, username_db, password_hash, full_name, role, is_active, organization_name, subscription_status, subscription_expires_at, users_limit, matrices_limit, clients_limit = result
+        user_id, organization_id, username_db, password_hash, full_name, role, is_active, organization_name, subscription_status, subscription_expires_at, users_limit, matrices_limit, clients_limit, password_change_required = result
         
         if not is_active:
             return {
@@ -196,7 +196,8 @@ def handle_login(body: dict) -> dict:
                     'full_name': full_name,
                     'role': role,
                     'organization_id': organization_id,
-                    'organization_name': organization_name
+                    'organization_name': organization_name,
+                    'password_change_required': password_change_required
                 },
                 'organization': {
                     'users_limit': users_limit,

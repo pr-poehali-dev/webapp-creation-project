@@ -123,8 +123,8 @@ def handler(event, context):
         password_hash = hash_password(password)
 
         cur.execute(
-            "INSERT INTO users (organization_id, username, email, password_hash, full_name, role, is_active) "
-            "VALUES (%s, '%s', '%s', '%s', '%s', '%s', true) RETURNING id"
+            "INSERT INTO users (organization_id, username, email, password_hash, full_name, role, is_active, password_change_required) "
+            "VALUES (%s, '%s', '%s', '%s', '%s', '%s', true, true) RETURNING id"
             % (int(organization_id), escape_sql(username), escape_sql(email), escape_sql(password_hash), escape_sql(full_name), escape_sql(role))
         )
         new_user_id = cur.fetchone()[0]

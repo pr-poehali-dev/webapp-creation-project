@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Update profile without auth",
+      "method": "POST",
+      "path": "/",
+      "expectedStatus": 401
+    }
+  ]
+}
