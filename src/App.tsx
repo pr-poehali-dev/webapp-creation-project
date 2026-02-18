@@ -27,6 +27,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrganizationTeam from "./pages/AdminOrganizationTeam";
 import NotFound from "./pages/NotFound";
 import FirstLoginPasswordModal from "./components/FirstLoginPasswordModal";
+import OfflineBanner from "./components/OfflineBanner";
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,8 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineBanner />
+        <PwaInstallPrompt />
         <FirstLoginPasswordModal open={showPasswordModal} onSuccess={handlePasswordChangeSuccess} />
         <BrowserRouter>
           <Routes>

@@ -235,13 +235,25 @@ const Dashboard = () => {
     <AppLayout>
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8 sm:mb-12 text-center">
+          <div className="mb-6 sm:mb-10 text-center">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3">
               Добро пожаловать, {user.full_name}!
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground">
               Выберите раздел для работы
             </p>
+          </div>
+
+          <div className="flex justify-center mb-6 sm:mb-10">
+            <button
+              onClick={() => navigate('/client/new')}
+              className="group relative flex items-center gap-3 px-8 py-4 rounded-2xl gradient-primary text-white font-semibold text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-95 transition-all duration-200 animate-fab-appear"
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <Icon name="Plus" size={24} />
+              </div>
+              <span>Новый клиент</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
