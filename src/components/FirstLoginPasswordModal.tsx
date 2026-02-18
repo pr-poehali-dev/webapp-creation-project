@@ -32,7 +32,7 @@ const FirstLoginPasswordModal = ({ open, onSuccess }: FirstLoginPasswordModalPro
 
     try {
       const token = localStorage.getItem('token');
-      const funcUrl = await import('@/backend/func2url.json').then(m => m.profile);
+      const funcUrl = await import('@/../backend/func2url.json').then(m => m.profile);
 
       const response = await fetch(funcUrl, {
         method: 'POST',
@@ -70,7 +70,7 @@ const FirstLoginPasswordModal = ({ open, onSuccess }: FirstLoginPasswordModalPro
 
     try {
       const token = localStorage.getItem('token');
-      const funcUrl = await import('@/backend/func2url.json').then(m => m.profile);
+      const funcUrl = await import('@/../backend/func2url.json').then(m => m.profile);
 
       const response = await fetch(funcUrl, {
         method: 'POST',
