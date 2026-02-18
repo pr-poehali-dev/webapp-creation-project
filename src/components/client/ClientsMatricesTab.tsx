@@ -109,23 +109,23 @@ const ClientsMatricesTab = ({
             </div>
           ) : showList ? (
             <div>
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                   variant="outline"
                   onClick={onBackToMatrix}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   <Icon name="ArrowLeft" size={16} />
                   Вернуться к матрице
                 </Button>
-                
-                <div className="flex items-center gap-4 flex-wrap">
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <div className="flex items-center gap-2">
-                    <Icon name="Filter" size={20} className="text-muted-foreground" />
+                    <Icon name="Filter" size={16} className="text-muted-foreground flex-shrink-0" />
                     <select
                       value={filterDealStatus}
                       onChange={(e) => setFilterDealStatus(e.target.value)}
-                      className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      className="flex-1 px-3 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm min-w-0"
                     >
                       <option value="">Все статусы</option>
                       {dealStatuses.map((status) => (
@@ -136,11 +136,11 @@ const ClientsMatricesTab = ({
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Icon name="UserCheck" size={20} className="text-muted-foreground" />
+                    <Icon name="UserCheck" size={16} className="text-muted-foreground flex-shrink-0" />
                     <select
                       value={filterResponsibleUser}
                       onChange={(e) => setFilterResponsibleUser(e.target.value)}
-                      className="px-4 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      className="flex-1 px-3 py-2 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm min-w-0"
                     >
                       <option value="">Все ответственные</option>
                       {users.map((user) => (
