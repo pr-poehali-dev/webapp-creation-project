@@ -1,8 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { toast } from 'sonner';
 import AppLayout from '@/components/layout/AppLayout';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
+import {
+  getDrafts,
+  getUnsyncedDrafts,
+  syncAllDrafts,
+  removeDraft,
+  ClientDraft,
+} from '@/services/drafts';
 
 interface User {
   id: number;
@@ -41,11 +51,18 @@ interface NavTile {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const isOnline = useNetworkStatus();
   const [user, setUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [stats, setStats] = useState<Stats>({ total_clients: 0, total_matrices: 0 });
   const [telegramLinked, setTelegramLinked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [drafts, setDrafts] = useState<ClientDraft[]>([]);
+  const [syncing, setSyncing] = useState(false);
+
+  const refreshDrafts = useCallback(() => {
+    setDrafts(getDrafts());
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -57,9 +74,26 @@ const Dashboard = () => {
     }
 
     setUser(JSON.parse(userData));
+
+    const cachedPerms = localStorage.getItem('permissions');
+    if (cachedPerms) {
+      try {
+        setPermissions(JSON.parse(cachedPerms));
+      } catch (e) {
+        console.error('Failed to parse cached permissions', e);
+      }
+    }
+
     fetchPermissions(token);
     fetchStats();
-  }, [navigate]);
+    refreshDrafts();
+  }, [navigate, refreshDrafts]);
+
+  useEffect(() => {
+    if (isOnline && getUnsyncedDrafts().length > 0) {
+      handleSyncDrafts();
+    }
+  }, [isOnline]);
 
   const fetchPermissions = async (token: string) => {
     try {
@@ -96,6 +130,10 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки прав:', error);
+      const cached = localStorage.getItem('permissions');
+      if (cached) {
+        setPermissions(JSON.parse(cached));
+      }
     }
   };
 
@@ -130,7 +168,6 @@ const Dashboard = () => {
         total_matrices: totalMatrices
       });
       
-      // Проверить привязку Telegram
       const userData = localStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
@@ -143,6 +180,34 @@ const Dashboard = () => {
     }
   };
 
+  const handleSyncDrafts = async () => {
+    if (syncing) return;
+    setSyncing(true);
+
+    try {
+      const result = await syncAllDrafts();
+      refreshDrafts();
+
+      if (result.success > 0) {
+        toast.success(`Отправлено ${result.success} ${result.success === 1 ? 'черновик' : 'черновиков'}`);
+        fetchStats();
+      }
+      if (result.failed > 0) {
+        toast.error(`Не удалось отправить ${result.failed} черновиков`);
+      }
+    } catch {
+      toast.error('Ошибка синхронизации');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDeleteDraft = (id: string) => {
+    removeDraft(id);
+    refreshDrafts();
+    toast.success('Черновик удалён');
+  };
+
   if (!user || !permissions) {
     return (
       <AppLayout>
@@ -152,6 +217,9 @@ const Dashboard = () => {
       </AppLayout>
     );
   }
+
+  const unsyncedDrafts = drafts.filter(d => !d.synced);
+  const syncedDrafts = drafts.filter(d => d.synced);
 
   const navTiles: NavTile[] = [
     {
@@ -231,6 +299,11 @@ const Dashboard = () => {
     !tile.permission || tile.permission(permissions)
   );
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -255,6 +328,125 @@ const Dashboard = () => {
               <span>Новый клиент</span>
             </button>
           </div>
+
+          {unsyncedDrafts.length > 0 && (
+            <div className="mb-6 sm:mb-10 animate-fab-appear">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Icon name="CloudOff" size={18} className="text-yellow-500" />
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Черновики ({unsyncedDrafts.length})
+                  </h3>
+                </div>
+                {isOnline && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSyncDrafts}
+                    disabled={syncing}
+                  >
+                    <Icon name={syncing ? "Loader2" : "RefreshCw"} size={14} className={`mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
+                    {syncing ? 'Отправка...' : 'Отправить все'}
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {unsyncedDrafts.map(draft => (
+                  <Card key={draft.id} className="p-3 sm:p-4 border-yellow-500/30 bg-yellow-500/5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm truncate">{draft.company_name}</p>
+                          {draft.scores.length > 0 && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium flex-shrink-0">
+                              <Icon name="ClipboardCheck" size={10} />
+                              {draft.scores.length}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          <span>{formatDate(draft.created_at)}</span>
+                          {draft.matrix_name && (
+                            <>
+                              <span>·</span>
+                              <span className="truncate">{draft.matrix_name}</span>
+                            </>
+                          )}
+                        </div>
+                        {draft.sync_error && (
+                          <p className="text-xs text-destructive mt-1">{draft.sync_error}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {isOnline && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleSyncDrafts()}
+                            disabled={syncing}
+                          >
+                            <Icon name="Send" size={14} className="text-primary" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleDeleteDraft(draft.id)}
+                        >
+                          <Icon name="Trash2" size={14} className="text-muted-foreground" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              {!isOnline && (
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                  <Icon name="WifiOff" size={12} />
+                  Черновики отправятся автоматически при подключении к интернету
+                </p>
+              )}
+            </div>
+          )}
+
+          {syncedDrafts.length > 0 && (
+            <div className="mb-6 sm:mb-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Icon name="CheckCircle2" size={18} className="text-green-500" />
+                  <h3 className="font-semibold text-sm text-muted-foreground">
+                    Отправлены ({syncedDrafts.length})
+                  </h3>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    syncedDrafts.forEach(d => removeDraft(d.id));
+                    refreshDrafts();
+                  }}
+                >
+                  <Icon name="X" size={14} className="mr-1" />
+                  Очистить
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {syncedDrafts.map(draft => (
+                  <Card key={draft.id} className="p-3 border-green-500/20 bg-green-500/5 opacity-70">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Icon name="Check" size={14} className="text-green-500 flex-shrink-0" />
+                        <p className="text-sm truncate">{draft.company_name}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(draft.created_at)}</span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {visibleTiles.map((tile) => (

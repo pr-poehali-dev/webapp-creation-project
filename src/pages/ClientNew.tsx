@@ -2,12 +2,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { toast } from 'sonner';
 import ClientWizardStep1 from '@/components/client/wizard/ClientWizardStep1';
 import ClientWizardStep2 from '@/components/client/wizard/ClientWizardStep2';
 import ClientWizardStep3 from '@/components/client/wizard/ClientWizardStep3';
 import ClientWizardStep4 from '@/components/client/wizard/ClientWizardStep4';
 import QuestionnaireFlow from '@/components/client/wizard/QuestionnaireFlow';
 import AppLayout from '@/components/layout/AppLayout';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
+import {
+  saveDraft,
+  cacheMatrices,
+  getCachedMatrices,
+  cacheCriteria,
+  getCachedCriteria,
+} from '@/services/drafts';
 
 interface Matrix {
   id: number;
@@ -34,6 +43,7 @@ type WizardStep = 1 | 2 | 3 | 4 | 'questionnaire';
 
 const ClientNew = () => {
   const navigate = useNavigate();
+  const isOnline = useNetworkStatus();
   const [loading, setLoading] = useState(false);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
@@ -57,7 +67,7 @@ const ClientNew = () => {
       return;
     }
 
-    fetchMatrices();
+    loadMatrices();
 
     const savedData = localStorage.getItem('clientWizardData');
     if (savedData) {
@@ -74,54 +84,74 @@ const ClientNew = () => {
     localStorage.setItem('clientWizardData', JSON.stringify(wizardData));
   }, [wizardData]);
 
-  const fetchMatrices = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  const loadMatrices = async () => {
+    if (navigator.onLine) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      const data = await response.json();
-      if (response.ok) {
-        setMatrices(data.matrices);
-        if (data.matrices.length === 1) {
-          setWizardData(prev => ({ ...prev, matrix_id: data.matrices[0].id.toString() }));
+        const data = await response.json();
+        if (response.ok) {
+          setMatrices(data.matrices);
+          cacheMatrices(data.matrices);
+          if (data.matrices.length === 1) {
+            setWizardData(prev => ({ ...prev, matrix_id: data.matrices[0].id.toString() }));
+          }
+          return;
         }
+      } catch (err) {
+        console.error('Ошибка загрузки матриц:', err);
       }
-    } catch (error) {
-      console.error('Ошибка загрузки матриц:', error);
+    }
+
+    const cached = getCachedMatrices();
+    if (cached.length > 0) {
+      setMatrices(cached);
+      if (cached.length === 1) {
+        setWizardData(prev => ({ ...prev, matrix_id: cached[0].id.toString() }));
+      }
     }
   };
 
-  const fetchMatrixCriteria = async (matrixId: string): Promise<boolean> => {
+  const loadCriteria = async (matrixId: string): Promise<boolean> => {
     setLoading(true);
     setError('');
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc?id=${matrixId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
 
-      const data = await response.json();
-      if (response.ok && data.matrix && data.matrix.criteria && data.matrix.criteria.length > 0) {
-        setCriteria(data.matrix.criteria);
-        return true;
-      } else {
-        throw new Error(data.error || 'Не удалось загрузить критерии матрицы');
+    if (navigator.onLine) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`https://functions.poehali.dev/574d8d38-81d5-49c7-b625-a170daa667bc?id=${matrixId}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        const data = await response.json();
+        if (response.ok && data.matrix?.criteria?.length > 0) {
+          setCriteria(data.matrix.criteria);
+          cacheCriteria(parseInt(matrixId), data.matrix.criteria);
+          setLoading(false);
+          return true;
+        } else {
+          throw new Error(data.error || 'Не удалось загрузить критерии');
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки критериев:', err);
       }
-    } catch (error) {
-      console.error('Ошибка загрузки критериев:', error);
-      setError(error instanceof Error ? error.message : 'Ошибка загрузки критериев');
-      return false;
-    } finally {
-      setLoading(false);
     }
+
+    const cached = getCachedCriteria(parseInt(matrixId));
+    if (cached && cached.length > 0) {
+      setCriteria(cached);
+      setLoading(false);
+      return true;
+    }
+
+    setError('Критерии ещё не загружены. Подключитесь к интернету хотя бы один раз, чтобы загрузить опросник.');
+    setLoading(false);
+    return false;
   };
 
   const handleStep1Next = () => {
@@ -155,7 +185,7 @@ const ClientNew = () => {
   const handleStartQuestionnaire = async () => {
     const matrixId = wizardData.matrix_id || matrices[0]?.id.toString();
     if (matrixId) {
-      const success = await fetchMatrixCriteria(matrixId);
+      const success = await loadCriteria(matrixId);
       if (success) {
         setCurrentStep('questionnaire');
       }
@@ -170,23 +200,39 @@ const ClientNew = () => {
     await createClient(completedScores);
   };
 
+  const getMatrixName = (): string => {
+    const id = wizardData.matrix_id || matrices[0]?.id.toString();
+    const matrix = matrices.find(m => m.id.toString() === id);
+    return matrix?.name || '';
+  };
+
   const createClient = async (clientScores: Score[]) => {
     setLoading(true);
     setError('');
 
+    const matrixId = wizardData.matrix_id || matrices[0]?.id.toString();
+
+    if (!navigator.onLine) {
+      saveDraft({
+        company_name: wizardData.company_name,
+        contact_person: wizardData.contact_person,
+        email: wizardData.email,
+        phone: wizardData.phone,
+        matrix_id: matrixId || '',
+        matrix_name: getMatrixName(),
+        scores: clientScores,
+      });
+
+      localStorage.removeItem('clientWizardData');
+      setLoading(false);
+      toast.success('Сохранено как черновик. Отправится при подключении к интернету.');
+      navigate('/dashboard');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
-      const matrixId = wizardData.matrix_id || matrices[0]?.id.toString();
-      
-      const payload: {
-        action: string;
-        company_name: string;
-        contact_person: string | null;
-        email: string | null;
-        phone: string | null;
-        matrix_id: number | null;
-        scores?: Score[];
-      } = {
+      const payload: Record<string, unknown> = {
         action: 'create',
         company_name: wizardData.company_name,
         contact_person: wizardData.contact_person || null,
@@ -217,9 +263,20 @@ const ClientNew = () => {
       localStorage.removeItem('clientWizardData');
       navigate('/clients');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка создания клиента');
-    } finally {
+      saveDraft({
+        company_name: wizardData.company_name,
+        contact_person: wizardData.contact_person,
+        email: wizardData.email,
+        phone: wizardData.phone,
+        matrix_id: matrixId || '',
+        matrix_name: getMatrixName(),
+        scores: clientScores,
+      });
+
+      localStorage.removeItem('clientWizardData');
       setLoading(false);
+      toast.success('Сохранено как черновик. Отправится при подключении к интернету.');
+      navigate('/dashboard');
     }
   };
 
@@ -243,7 +300,15 @@ const ClientNew = () => {
                 <Icon name="ArrowLeft" size={20} />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold">Новый клиент</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">Новый клиент</h1>
+                  {!isOnline && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-600/20 text-yellow-500 text-xs font-medium">
+                      <Icon name="WifiOff" size={12} />
+                      офлайн
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {currentStep === 'questionnaire' 
                     ? 'Опросник по критериям'
