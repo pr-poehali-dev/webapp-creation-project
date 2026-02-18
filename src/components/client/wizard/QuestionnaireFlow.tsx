@@ -169,35 +169,16 @@ const QuestionnaireFlow = ({
         </div>
       </Card>
 
-      <div className="flex justify-between gap-2 sm:gap-4">
+      <div className="flex justify-center">
         <Button
           onClick={handlePrevious}
           variant="outline"
           size="default"
-          className="flex-1 sm:flex-none"
+          className="w-full sm:w-auto"
         >
           <Icon name="ArrowLeft" size={18} className="mr-1 sm:mr-2" />
           <span className="hidden sm:inline">{currentIndex === 0 ? 'К выбору опросника' : 'Назад'}</span>
           <span className="sm:hidden">Назад</span>
-        </Button>
-
-        <Button
-          onClick={handleNext}
-          className="gradient-primary flex-1 sm:flex-none"
-          size="default"
-          disabled={sortedStatuses.length > 0 && !selectedStatuses.has(currentCriterion.id)}
-        >
-          {currentIndex === criteria.length - 1 ? (
-            <>
-              <Icon name="CheckCircle2" size={18} className="mr-1 sm:mr-2" />
-              Завершить
-            </>
-          ) : (
-            <>
-              Далее
-              <Icon name="ArrowRight" size={18} className="ml-1 sm:ml-2" />
-            </>
-          )}
         </Button>
       </div>
     </div>

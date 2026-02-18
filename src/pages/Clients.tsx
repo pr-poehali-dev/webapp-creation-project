@@ -76,26 +76,28 @@ const Clients = () => {
 
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'matrices' | 'unrated' | 'kanban')}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="matrices" className="flex items-center gap-2">
-              <Icon name="Grid3x3" size={16} />
-              Матрицы ({matrices.length})
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="flex items-center gap-2">
-              <Icon name="Kanban" size={16} />
-              Канбан статусов
-            </TabsTrigger>
-            <TabsTrigger value="unrated" className="flex items-center gap-2">
-              <Icon name="Users" size={16} />
-              Без оценки ({unratedClients.length})
-            </TabsTrigger>
-            {(userRole === 'owner' || userRole === 'admin') && (
-              <TabsTrigger value="deleted" className="flex items-center gap-2" onClick={() => navigate('/clients/deleted')}>
-                <Icon name="Trash2" size={16} />
-                Удаленные
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="mb-6 w-max sm:w-auto">
+              <TabsTrigger value="matrices" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Icon name="Grid3x3" size={14} className="sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Матрицы</span> ({matrices.length})
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger value="kanban" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Icon name="Kanban" size={14} className="sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Канбан</span>
+              </TabsTrigger>
+              <TabsTrigger value="unrated" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Icon name="Users" size={14} className="sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Без оценки</span> ({unratedClients.length})
+              </TabsTrigger>
+              {(userRole === 'owner' || userRole === 'admin') && (
+                <TabsTrigger value="deleted" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm" onClick={() => navigate('/clients/deleted')}>
+                  <Icon name="Trash2" size={14} className="sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Удаленные</span>
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
 
           <TabsContent value="matrices">
             <ClientsMatricesTab
